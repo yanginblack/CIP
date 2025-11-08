@@ -48,6 +48,7 @@ export default function HomePage() {
     setIsSearched(false);
 
     try {
+      console.log("Searching for:", data);
       const response = await fetch("/api/appointments/search", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -56,10 +57,13 @@ export default function HomePage() {
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.error || "Failed to search appointments");
+        const errorMessage = errorData.error || "Failed to search appointments";
+        console.error("Search failed:", errorMessage, errorData);
+        throw new Error(errorMessage);
       }
 
       const results = await response.json();
+      console.log("Search results:", results);
       setAppointments(results);
       setIsSearched(true);
 
@@ -70,10 +74,12 @@ export default function HomePage() {
         }, 500);
       }
     } catch (err: any) {
-      setError(err.message || "An error occurred");
+      console.error("Search error:", err);
+      const errorMessage = err.message || "An error occurred";
+      setError(errorMessage);
       if (isVoiceCheckIn) {
         setTimeout(() => {
-          speak(`Sorry, there was an error: ${err.message}`);
+          speak(`Sorry, there was an error searching for appointments. Please try again or contact the front desk.`);
         }, 500);
       }
     } finally {
@@ -155,6 +161,8 @@ export default function HomePage() {
         // User said no, restart
         setCapturedName(null);
         setWaitingForConfirmation(false);
+        setValue("firstName", "");
+        setValue("lastName", "");
         resetTranscript();
         speak("Let's try again. Please say your first name and last name.");
         setTimeout(() => {
