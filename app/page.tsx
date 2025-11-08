@@ -1,9 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { nameSearchSchema, type NameSearchInput } from "@/lib/validations";
+import { useSpeech } from "@/hooks/useSpeech";
+import { useAudioCheckIn } from "@/hooks/useAudioCheckIn";
+import { AudioButton } from "@/components/AudioButton";
+import { MicrophoneIcon } from "@/components/icons";
 
 type Appointment = {
   id: string;
@@ -17,21 +21,42 @@ export default function HomePage() {
   const [isSearched, setIsSearched] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const { speak, stop, isSpeaking, isSupported } = useSpeech();
 
   const {
     register,
     handleSubmit,
+    setValue,
     formState: { errors },
   } = useForm<NameSearchInput>({
     resolver: zodResolver(nameSearchSchema),
   });
 
-  const onSubmit = async (data: NameSearchInput) => {
+  // Audio check-in hook
+  const {
+    startCheckIn,
+    isListening,
+    isSpeaking: isCheckInSpeaking,
+    isVoiceSupported,
+  } = useAudioCheckIn({
+    onNameConfirmed: (name) => {
+      setValue("firstName", name.firstName);
+      setValue("lastName", name.lastName);
+      performSearch(name, true);
+    },
+    onReset: () => {
+      setValue("firstName", "");
+      setValue("lastName", "");
+    },
+  });
+
+  const performSearch = async (data: NameSearchInput, isVoiceCheckIn = false) => {
     setIsLoading(true);
     setError(null);
     setIsSearched(false);
 
     try {
+      console.log("Searching for:", data);
       const response = await fetch("/api/appointments/search", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -40,17 +65,38 @@ export default function HomePage() {
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.error || "Failed to search appointments");
+        const errorMessage = errorData.error || "Failed to search appointments";
+        console.error("Search failed:", errorMessage, errorData);
+        throw new Error(errorMessage);
       }
 
       const results = await response.json();
+      console.log("Search results:", results);
       setAppointments(results);
       setIsSearched(true);
+
+      // Auto-announce results for voice check-in
+      if (isVoiceCheckIn) {
+        setTimeout(() => {
+          announceResultsForCheckIn(results);
+        }, 500);
+      }
     } catch (err: any) {
-      setError(err.message || "An error occurred");
+      console.error("Search error:", err);
+      const errorMessage = err.message || "An error occurred";
+      setError(errorMessage);
+      if (isVoiceCheckIn) {
+        setTimeout(() => {
+          speak(`Sorry, there was an error searching for appointments. Please try again or contact the front desk.`);
+        }, 500);
+      }
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const onSubmit = async (data: NameSearchInput) => {
+    await performSearch(data, false);
   };
 
   const formatDateTime = (dateString: string) => {
@@ -60,6 +106,48 @@ export default function HomePage() {
       timeStyle: "short",
     }).format(date);
   };
+
+  const announceResults = () => {
+    if (appointments.length === 0) {
+      speak("No upcoming appointments found. Please check the spelling and try again.");
+    } else {
+      const resultText = `Found ${appointments.length} appointment${appointments.length === 1 ? "" : "s"}. ` +
+        appointments.map((apt, idx) =>
+          `Appointment ${idx + 1}: ${formatDateTime(apt.startUtc)} with ${apt.staff}. ${apt.notes ? `Notes: ${apt.notes}` : ""}`
+        ).join(". ");
+      speak(resultText);
+    }
+  };
+
+  const announceResultsForCheckIn = (results: Appointment[]) => {
+    if (results.length === 0) {
+      speak("No upcoming appointments found. Please check with the front desk.");
+    } else {
+      const appointmentText = results.map((apt, idx) => {
+        const dateStr = formatDateTime(apt.startUtc);
+        return `Appointment ${idx + 1}: ${dateStr} with ${apt.staff}. ${apt.notes ? `Notes: ${apt.notes}. ` : ""}`;
+      }).join(". ");
+
+      const message = `Found ${results.length} appointment${results.length === 1 ? "" : "s"}. ${appointmentText}. You are now checked in. Thank you!`;
+      speak(message);
+    }
+  };
+
+  // Keyboard shortcut: Ctrl+R or Cmd+R to read results
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === "r" && isSearched) {
+        e.preventDefault();
+        if (isSpeaking) {
+          stop();
+        } else {
+          announceResults();
+        }
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [isSearched, isSpeaking, appointments]);
 
   return (
     <main className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100 py-12 px-4">
@@ -114,13 +202,31 @@ export default function HomePage() {
               </div>
             </div>
 
-            <button
-              type="submit"
-              disabled={isLoading}
-              className="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-            >
-              {isLoading ? "Searching..." : "Search Appointments"}
-            </button>
+            <div className="flex gap-3">
+              {isVoiceSupported && (
+                <button
+                  type="button"
+                  onClick={startCheckIn}
+                  disabled={isListening || isSpeaking}
+                  className={`flex items-center justify-center gap-2 px-6 py-2 rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 transition-colors ${
+                    isListening
+                      ? "bg-red-600 hover:bg-red-700 focus:ring-red-500 animate-pulse"
+                      : "bg-green-600 hover:bg-green-700 focus:ring-green-500"
+                  } text-white disabled:opacity-50 disabled:cursor-not-allowed`}
+                  aria-label="Audio check-in"
+                >
+                  <MicrophoneIcon />
+                  <span>{isListening ? "Listening..." : "Audio Check-in"}</span>
+                </button>
+              )}
+              <button
+                type="submit"
+                disabled={isLoading}
+                className="flex-1 bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              >
+                {isLoading ? "Searching..." : "Search Appointments"}
+              </button>
+            </div>
           </form>
 
           {error && (
@@ -131,13 +237,20 @@ export default function HomePage() {
 
           {isSearched && (
             <div>
-              <h2 className="text-xl font-semibold text-gray-900 mb-4">
-                {appointments.length > 0
-                  ? `Found ${appointments.length} appointment${
-                      appointments.length === 1 ? "" : "s"
-                    }`
-                  : "No upcoming appointments found"}
-              </h2>
+              <div className="flex justify-between items-center mb-4">
+                <h2 className="text-xl font-semibold text-gray-900">
+                  {appointments.length > 0
+                    ? `Found ${appointments.length} appointment${
+                        appointments.length === 1 ? "" : "s"
+                      }`
+                    : "No upcoming appointments found"}
+                </h2>
+                <AudioButton
+                  isSpeaking={isSpeaking}
+                  onToggle={isSpeaking ? stop : announceResults}
+                  isSupported={isSupported}
+                />
+              </div>
 
               {appointments.length > 0 ? (
                 <div className="overflow-x-auto">
