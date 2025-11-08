@@ -25,29 +25,96 @@ async function main() {
     console.log(`Admin user already exists: ${existingAdmin.email}`);
   }
 
-  // Create some sample appointments for testing
-  const now = new Date();
+  // Delete existing appointments
+  await prisma.appointment.deleteMany({});
+  console.log("Cleared existing appointments");
+
+  // Create sample appointments with varied dates
   const sampleAppointments = [
+    // 3 appointments BEFORE Nov 8th
     {
-      firstName: "John",
-      lastName: "Doe",
-      startUtc: new Date(now.getTime() + 24 * 60 * 60 * 1000), // Tomorrow
+      firstName: "Alice",
+      lastName: "Johnson",
+      startUtc: new Date("2025-11-05T09:00:00Z"),
       staff: "Dr. Smith",
+      notes: "Annual checkup",
+    },
+    {
+      firstName: "Bob",
+      lastName: "Williams",
+      startUtc: new Date("2025-11-06T14:30:00Z"),
+      staff: "Dr. Johnson",
+      notes: "Follow-up consultation",
+    },
+    {
+      firstName: "Carol",
+      lastName: "Davis",
+      startUtc: new Date("2025-11-07T11:00:00Z"),
+      staff: "Dr. Williams",
+      notes: "Initial assessment",
+    },
+
+    // 3 appointments ON Nov 8th
+    {
+      firstName: "David",
+      lastName: "Miller",
+      startUtc: new Date("2025-11-08T08:00:00Z"),
+      checkinTime: new Date("2025-11-08T08:00:00Z"),
+      checkoutTime: new Date("2025-11-08T08:30:00Z"),
+      staff: "Dr. Smith",
+      notes: "Morning consultation",
+    },
+    {
+      firstName: "Emma",
+      lastName: "Wilson",
+      startUtc: new Date("2025-11-08T13:00:00Z"),
+      checkinTime: new Date("2025-11-08T13:00:00Z"),
+      staff: "Dr. Johnson",
+      notes: "Afternoon checkup",
+    },
+    {
+      firstName: "Frank",
+      lastName: "Moore",
+      startUtc: new Date("2025-11-08T16:30:00Z"),
+      staff: "Dr. Williams",
+      notes: "Evening appointment",
+    },
+
+    // 5 appointments AFTER Nov 8th
+    {
+      firstName: "Grace",
+      lastName: "Taylor",
+      startUtc: new Date("2025-11-09T10:00:00Z"),
+      staff: "Dr. Smith",
+      notes: "Regular checkup",
+    },
+    {
+      firstName: "Henry",
+      lastName: "Anderson",
+      startUtc: new Date("2025-11-10T15:00:00Z"),
+      staff: "Dr. Johnson",
+      notes: "Follow-up visit",
+    },
+    {
+      firstName: "Iris",
+      lastName: "Thomas",
+      startUtc: new Date("2025-11-11T09:30:00Z"),
+      staff: "Dr. Williams",
       notes: "Initial consultation",
     },
     {
-      firstName: "Jane",
-      lastName: "Smith",
-      startUtc: new Date(now.getTime() + 48 * 60 * 60 * 1000), // Day after tomorrow
-      staff: "Dr. Johnson",
-      notes: "Follow-up appointment",
+      firstName: "Jack",
+      lastName: "Jackson",
+      startUtc: new Date("2025-11-12T14:00:00Z"),
+      staff: "Dr. Smith",
+      notes: "Treatment review",
     },
     {
-      firstName: "John",
-      lastName: "Doe",
-      startUtc: new Date(now.getTime() + 72 * 60 * 60 * 1000), // 3 days from now
-      staff: "Dr. Williams",
-      notes: "Regular checkup",
+      firstName: "Kelly",
+      lastName: "White",
+      startUtc: new Date("2025-11-13T11:30:00Z"),
+      staff: "Dr. Johnson",
+      notes: "Annual physical",
     },
   ];
 
