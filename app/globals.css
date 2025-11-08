@@ -1,0 +1,14 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+body {
+  color: #000000;
+  background: #f9fafb;
+}
+
+@layer base {
+  * {
+    @apply border-gray-200;
+  }
+}
