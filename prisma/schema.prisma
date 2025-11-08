@@ -29,5 +29,17 @@ model AdminUser {
   id        String   @id @default(cuid())
   email     String   @unique
   password  String
+  role      String   @default("ADMIN") // ADMIN or SYSTEM_ADMIN
   createdAt DateTime @default(now())
+}
+
+model Staff {
+  staffId        String   @id @default(cuid())
+  name           String
+  service        String
+  googleCalendar String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@index([name])
 }

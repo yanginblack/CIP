@@ -64,6 +64,10 @@ export default function AdminPage() {
     }
   }, [status, router]);
 
+  // Check if user is system admin
+  const userRole = (session?.user as any)?.role;
+  const isSystemAdmin = userRole === "SYSTEM_ADMIN";
+
   // Build query parameters
   const buildQueryParams = () => {
     const params = new URLSearchParams();
@@ -306,14 +310,29 @@ export default function AdminPage() {
               </h1>
               <p className="text-sm text-gray-600 mt-1">
                 Logged in as {session?.user?.email}
+                {isSystemAdmin && (
+                  <span className="ml-2 px-2 py-0.5 bg-purple-100 text-purple-700 text-xs font-semibold rounded">
+                    System Admin
+                  </span>
+                )}
               </p>
             </div>
-            <button
-              onClick={() => signOut({ callbackUrl: "/admin/login" })}
-              className="px-4 py-2 text-sm text-red-600 hover:text-red-700 border border-red-600 rounded-md hover:bg-red-50 transition-colors"
-            >
-              Log Out
-            </button>
+            <div className="flex gap-2">
+              {isSystemAdmin && (
+                <button
+                  onClick={() => router.push("/admin/staff")}
+                  className="px-4 py-2 text-sm text-blue-600 hover:text-blue-700 border border-blue-600 rounded-md hover:bg-blue-50 transition-colors"
+                >
+                  Manage Staff
+                </button>
+              )}
+              <button
+                onClick={() => signOut({ callbackUrl: "/admin/login" })}
+                className="px-4 py-2 text-sm text-red-600 hover:text-red-700 border border-red-600 rounded-md hover:bg-red-50 transition-colors"
+              >
+                Log Out
+              </button>
+            </div>
           </div>
 
           {/* Filters */}

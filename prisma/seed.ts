@@ -8,7 +8,7 @@ async function main() {
   const adminPasswordHash =
     process.env.ADMIN_PASSWORD_HASH || bcrypt.hashSync("admin123", 10);
 
-  // Check if admin user already exists
+  // Create or update normal admin user
   const existingAdmin = await prisma.adminUser.findUnique({
     where: { email: adminEmail },
   });
@@ -18,11 +18,33 @@ async function main() {
       data: {
         email: adminEmail,
         password: adminPasswordHash,
+        role: "ADMIN",
       },
     });
     console.log(`Created admin user: ${admin.email}`);
   } else {
     console.log(`Admin user already exists: ${existingAdmin.email}`);
+  }
+
+  // Create system admin user
+  const sysAdminEmail = "sysadmin@example.com";
+  const sysAdminPasswordHash = bcrypt.hashSync("sysadmin123", 10);
+
+  const existingSysAdmin = await prisma.adminUser.findUnique({
+    where: { email: sysAdminEmail },
+  });
+
+  if (!existingSysAdmin) {
+    const sysAdmin = await prisma.adminUser.create({
+      data: {
+        email: sysAdminEmail,
+        password: sysAdminPasswordHash,
+        role: "SYSTEM_ADMIN",
+      },
+    });
+    console.log(`Created system admin user: ${sysAdmin.email}`);
+  } else {
+    console.log(`System admin user already exists: ${existingSysAdmin.email}`);
   }
 
   // Delete existing appointments
@@ -125,6 +147,47 @@ async function main() {
   }
 
   console.log(`Created ${sampleAppointments.length} sample appointments`);
+
+  // Delete existing staff
+  await prisma.staff.deleteMany({});
+  console.log("Cleared existing staff");
+
+  // Create sample staff
+  const sampleStaff = [
+    {
+      name: "Dr. Smith",
+      service: "General Practice",
+      googleCalendar: "dr.smith@clinic.com",
+    },
+    {
+      name: "Dr. Johnson",
+      service: "Pediatrics",
+      googleCalendar: "dr.johnson@clinic.com",
+    },
+    {
+      name: "Dr. Williams",
+      service: "Cardiology",
+      googleCalendar: "dr.williams@clinic.com",
+    },
+    {
+      name: "Dr. Brown",
+      service: "Dermatology",
+      googleCalendar: "dr.brown@clinic.com",
+    },
+    {
+      name: "Dr. Davis",
+      service: "Orthopedics",
+      googleCalendar: "dr.davis@clinic.com",
+    },
+  ];
+
+  for (const staff of sampleStaff) {
+    await prisma.staff.create({
+      data: staff,
+    });
+  }
+
+  console.log(`Created ${sampleStaff.length} sample staff members`);
 }
 
 main()
