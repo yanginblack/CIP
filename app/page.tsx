@@ -5,7 +5,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { nameSearchSchema, type NameSearchInput } from "@/lib/validations";
 import { useSpeech } from "@/hooks/useSpeech";
-import { useVoiceInput } from "@/hooks/useVoiceInput";
+import { useAudioCheckIn } from "@/hooks/useAudioCheckIn";
 import { AudioButton } from "@/components/AudioButton";
 import { MicrophoneIcon } from "@/components/icons";
 
@@ -21,25 +21,33 @@ export default function HomePage() {
   const [isSearched, setIsSearched] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [waitingForConfirmation, setWaitingForConfirmation] = useState(false);
-  const [capturedName, setCapturedName] = useState<{ firstName: string; lastName: string } | null>(null);
   const { speak, stop, isSpeaking, isSupported } = useSpeech();
-  const {
-    isListening,
-    transcript,
-    startListening,
-    resetTranscript,
-    isSupported: isVoiceSupported,
-  } = useVoiceInput();
 
   const {
     register,
     handleSubmit,
     setValue,
-    getValues,
     formState: { errors },
   } = useForm<NameSearchInput>({
     resolver: zodResolver(nameSearchSchema),
+  });
+
+  // Audio check-in hook
+  const {
+    startCheckIn,
+    isListening,
+    isSpeaking: isCheckInSpeaking,
+    isVoiceSupported,
+  } = useAudioCheckIn({
+    onNameConfirmed: (name) => {
+      setValue("firstName", name.firstName);
+      setValue("lastName", name.lastName);
+      performSearch(name, true);
+    },
+    onReset: () => {
+      setValue("firstName", "");
+      setValue("lastName", "");
+    },
   });
 
   const performSearch = async (data: NameSearchInput, isVoiceCheckIn = false) => {
@@ -125,88 +133,6 @@ export default function HomePage() {
     }
   };
 
-  const handleVoiceCheckIn = () => {
-    if (isListening) return;
-    resetTranscript();
-    setCapturedName(null);
-    setWaitingForConfirmation(false);
-    speak("Please say your first name and last name.");
-    setTimeout(() => {
-      startListening();
-    }, 2000);
-  };
-
-  // Helper function to spell out a name
-  const spellName = (name: string) => {
-    return name.split('').join('. ') + '.';
-  };
-
-  // Process voice transcript
-  useEffect(() => {
-    if (!transcript) return;
-
-    const lowerTranscript = transcript.toLowerCase().trim();
-
-    // If we have a captured name and waiting for yes/no confirmation
-    if (waitingForConfirmation && capturedName) {
-      if (lowerTranscript.includes("yes") || lowerTranscript.includes("yeah") || lowerTranscript.includes("correct")) {
-        // User confirmed, proceed with search
-        setWaitingForConfirmation(false);
-        speak("Searching for your appointments. Please wait.");
-        resetTranscript();
-        setTimeout(() => {
-          performSearch(capturedName, true);
-        }, 1500);
-      } else if (lowerTranscript.includes("no")) {
-        // User said no, restart
-        setCapturedName(null);
-        setWaitingForConfirmation(false);
-        setValue("firstName", "");
-        setValue("lastName", "");
-        resetTranscript();
-        speak("Let's try again. Please say your first name and last name.");
-        setTimeout(() => {
-          startListening();
-        }, 3000);
-      } else {
-        // Unclear response, ask again
-        resetTranscript();
-        speak("I didn't catch that. Please say yes or no.");
-        setTimeout(() => {
-          startListening();
-        }, 2500);
-      }
-    } else if (!waitingForConfirmation && !capturedName) {
-      // Extract first and last name from transcript
-      const words = transcript.trim().split(/\s+/);
-      if (words.length >= 2) {
-        const firstName = words[0];
-        const lastName = words.slice(1).join(" ");
-        setValue("firstName", firstName);
-        setValue("lastName", lastName);
-        setCapturedName({ firstName, lastName });
-
-        // Confirm with user - spell out the names
-        const firstNameSpelled = spellName(firstName);
-        const lastNameSpelled = spellName(lastName);
-        const confirmationMessage = `I heard ${firstName}, spelled ${firstNameSpelled}, ${lastName}, spelled ${lastNameSpelled}. Is that correct? Please say yes or no.`;
-
-        resetTranscript();
-        speak(confirmationMessage);
-        setWaitingForConfirmation(true);
-        setTimeout(() => {
-          startListening();
-        }, confirmationMessage.length * 50); // Dynamic timing based on message length
-      } else if (words.length === 1) {
-        resetTranscript();
-        speak("I only heard one name. Please say both your first name and last name.");
-        setTimeout(() => {
-          startListening();
-        }, 3500);
-      }
-    }
-  }, [transcript, waitingForConfirmation, capturedName, setValue, speak, startListening, resetTranscript, performSearch]);
-
   // Keyboard shortcut: Ctrl+R or Cmd+R to read results
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -280,7 +206,7 @@ export default function HomePage() {
               {isVoiceSupported && (
                 <button
                   type="button"
-                  onClick={handleVoiceCheckIn}
+                  onClick={startCheckIn}
                   disabled={isListening || isSpeaking}
                   className={`flex items-center justify-center gap-2 px-6 py-2 rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 transition-colors ${
                     isListening

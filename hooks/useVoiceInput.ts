@@ -46,8 +46,23 @@ export function useVoiceInput() {
 
     try {
       setTranscript("");
-      recognitionRef.current.start();
-      setIsListening(true);
+      // Stop any existing recognition before starting new one
+      try {
+        recognitionRef.current.stop();
+      } catch (e) {
+        // Ignore errors if already stopped
+      }
+
+      // Small delay to ensure previous recognition has stopped
+      setTimeout(() => {
+        try {
+          recognitionRef.current.start();
+          setIsListening(true);
+        } catch (error) {
+          console.error("Failed to start recognition:", error);
+          setIsListening(false);
+        }
+      }, 100);
     } catch (error) {
       console.error("Failed to start recognition:", error);
       setIsListening(false);
