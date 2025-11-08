@@ -21,6 +21,8 @@ export default function HomePage() {
   const [isSearched, setIsSearched] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [waitingForConfirmation, setWaitingForConfirmation] = useState(false);
+  const [capturedName, setCapturedName] = useState<{ firstName: string; lastName: string } | null>(null);
   const { speak, stop, isSpeaking, isSupported } = useSpeech();
   const {
     isListening,
@@ -34,12 +36,13 @@ export default function HomePage() {
     register,
     handleSubmit,
     setValue,
+    getValues,
     formState: { errors },
   } = useForm<NameSearchInput>({
     resolver: zodResolver(nameSearchSchema),
   });
 
-  const onSubmit = async (data: NameSearchInput) => {
+  const performSearch = async (data: NameSearchInput, isVoiceCheckIn = false) => {
     setIsLoading(true);
     setError(null);
     setIsSearched(false);
@@ -59,11 +62,27 @@ export default function HomePage() {
       const results = await response.json();
       setAppointments(results);
       setIsSearched(true);
+
+      // Auto-announce results for voice check-in
+      if (isVoiceCheckIn) {
+        setTimeout(() => {
+          announceResultsForCheckIn(results);
+        }, 500);
+      }
     } catch (err: any) {
       setError(err.message || "An error occurred");
+      if (isVoiceCheckIn) {
+        setTimeout(() => {
+          speak(`Sorry, there was an error: ${err.message}`);
+        }, 500);
+      }
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const onSubmit = async (data: NameSearchInput) => {
+    await performSearch(data, false);
   };
 
   const formatDateTime = (dateString: string) => {
@@ -86,27 +105,99 @@ export default function HomePage() {
     }
   };
 
+  const announceResultsForCheckIn = (results: Appointment[]) => {
+    if (results.length === 0) {
+      speak("No upcoming appointments found. Please check with the front desk.");
+    } else {
+      const appointmentText = results.map((apt, idx) => {
+        const dateStr = formatDateTime(apt.startUtc);
+        return `Appointment ${idx + 1}: ${dateStr} with ${apt.staff}. ${apt.notes ? `Notes: ${apt.notes}. ` : ""}`;
+      }).join(". ");
+
+      const message = `Found ${results.length} appointment${results.length === 1 ? "" : "s"}. ${appointmentText}. You are now checked in. Thank you!`;
+      speak(message);
+    }
+  };
+
   const handleVoiceCheckIn = () => {
     if (isListening) return;
     resetTranscript();
+    setCapturedName(null);
+    setWaitingForConfirmation(false);
     speak("Please say your first name and last name.");
     setTimeout(() => {
       startListening();
     }, 2000);
   };
 
-  // Process voice transcript to extract first and last name
+  // Helper function to spell out a name
+  const spellName = (name: string) => {
+    return name.split('').join('. ') + '.';
+  };
+
+  // Process voice transcript
   useEffect(() => {
-    if (transcript) {
+    if (!transcript) return;
+
+    const lowerTranscript = transcript.toLowerCase().trim();
+
+    // If we have a captured name and waiting for yes/no confirmation
+    if (waitingForConfirmation && capturedName) {
+      if (lowerTranscript.includes("yes") || lowerTranscript.includes("yeah") || lowerTranscript.includes("correct")) {
+        // User confirmed, proceed with search
+        setWaitingForConfirmation(false);
+        speak("Searching for your appointments. Please wait.");
+        resetTranscript();
+        setTimeout(() => {
+          performSearch(capturedName, true);
+        }, 1500);
+      } else if (lowerTranscript.includes("no")) {
+        // User said no, restart
+        setCapturedName(null);
+        setWaitingForConfirmation(false);
+        resetTranscript();
+        speak("Let's try again. Please say your first name and last name.");
+        setTimeout(() => {
+          startListening();
+        }, 3000);
+      } else {
+        // Unclear response, ask again
+        resetTranscript();
+        speak("I didn't catch that. Please say yes or no.");
+        setTimeout(() => {
+          startListening();
+        }, 2500);
+      }
+    } else if (!waitingForConfirmation && !capturedName) {
+      // Extract first and last name from transcript
       const words = transcript.trim().split(/\s+/);
       if (words.length >= 2) {
-        setValue("firstName", words[0]);
-        setValue("lastName", words.slice(1).join(" "));
+        const firstName = words[0];
+        const lastName = words.slice(1).join(" ");
+        setValue("firstName", firstName);
+        setValue("lastName", lastName);
+        setCapturedName({ firstName, lastName });
+
+        // Confirm with user - spell out the names
+        const firstNameSpelled = spellName(firstName);
+        const lastNameSpelled = spellName(lastName);
+        const confirmationMessage = `I heard ${firstName}, spelled ${firstNameSpelled}, ${lastName}, spelled ${lastNameSpelled}. Is that correct? Please say yes or no.`;
+
+        resetTranscript();
+        speak(confirmationMessage);
+        setWaitingForConfirmation(true);
+        setTimeout(() => {
+          startListening();
+        }, confirmationMessage.length * 50); // Dynamic timing based on message length
       } else if (words.length === 1) {
-        setValue("firstName", words[0]);
+        resetTranscript();
+        speak("I only heard one name. Please say both your first name and last name.");
+        setTimeout(() => {
+          startListening();
+        }, 3500);
       }
     }
-  }, [transcript, setValue]);
+  }, [transcript, waitingForConfirmation, capturedName, setValue, speak, startListening, resetTranscript, performSearch]);
 
   // Keyboard shortcut: Ctrl+R or Cmd+R to read results
   useEffect(() => {
