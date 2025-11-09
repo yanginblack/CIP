@@ -1,3 +1,5 @@
+import { TRANSLATIONS, SupportedLanguage } from "./languageConfig";
+
 /**
  * Spell out a name letter by letter with periods
  * Example: "John" becomes "J. o. h. n."
@@ -28,19 +30,25 @@ export function parseFullName(transcript: string): {
 /**
  * Check if a transcript contains a positive confirmation
  */
-export function isPositiveConfirmation(transcript: string): boolean {
+export function isPositiveConfirmation(
+  transcript: string,
+  language: SupportedLanguage = "en"
+): boolean {
   const lowerTranscript = transcript.toLowerCase().trim();
-  return (
-    lowerTranscript.includes("yes") ||
-    lowerTranscript.includes("yeah") ||
-    lowerTranscript.includes("correct")
-  );
+  const positiveWords = TRANSLATIONS[language].positiveWords;
+
+  return positiveWords.some((word) => lowerTranscript.includes(word));
 }
 
 /**
  * Check if a transcript contains a negative confirmation
  */
-export function isNegativeConfirmation(transcript: string): boolean {
+export function isNegativeConfirmation(
+  transcript: string,
+  language: SupportedLanguage = "en"
+): boolean {
   const lowerTranscript = transcript.toLowerCase().trim();
-  return lowerTranscript.includes("no");
+  const negativeWords = TRANSLATIONS[language].negativeWords;
+
+  return negativeWords.some((word) => lowerTranscript.includes(word));
 }

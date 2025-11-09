@@ -57,6 +57,9 @@ export interface ConfirmationStepProps extends BaseStepProps {
 
 export interface HelpStepProps extends BaseStepProps {
   onAgentRequest: () => void;
+  isSpeaking?: boolean;
+  onToggleAudio?: () => void;
+  isAudioSupported?: boolean;
 }
 
 export interface PersistentNavigationProps {

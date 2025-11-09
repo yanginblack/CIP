@@ -8,7 +8,7 @@ export function useSpeech() {
     setIsSupported("speechSynthesis" in window);
   }, []);
 
-  const speak = useCallback((text: string) => {
+  const speak = useCallback((text: string, lang: string = "en-US", onComplete?: () => void) => {
     if (!isSupported) return;
 
     // Cancel any ongoing speech
@@ -16,8 +16,15 @@ export function useSpeech() {
 
     const utterance = new SpeechSynthesisUtterance(text);
     utterance.rate = 0.9; // Slightly slower for clarity
+    utterance.lang = lang; // Set language for correct pronunciation
     utterance.onstart = () => setIsSpeaking(true);
-    utterance.onend = () => setIsSpeaking(false);
+    utterance.onend = () => {
+      setIsSpeaking(false);
+      if (onComplete) {
+        // Add small delay before callback
+        setTimeout(onComplete, 500);
+      }
+    };
     utterance.onerror = () => setIsSpeaking(false);
 
     window.speechSynthesis.speak(utterance);

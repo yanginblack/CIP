@@ -6,6 +6,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { nameSearchSchema, type NameSearchInput } from "@/lib/validations";
 import { useSpeech } from "@/hooks/useSpeech";
 import { useAudioCheckIn } from "@/hooks/useAudioCheckIn";
+import { SUPPORTED_LANGUAGES, TRANSLATIONS } from "@/lib/languageConfig";
 
 // Component imports
 import { WelcomeStep } from "@/components/checkin/WelcomeStep";
@@ -47,6 +48,7 @@ export default function HomePage() {
     isListening,
     isSpeaking: isCheckInSpeaking,
     isVoiceSupported,
+    selectedLanguage,
   } = useAudioCheckIn({
     onNameConfirmed: (name) => {
       setValue("firstName", name.firstName);
@@ -59,7 +61,7 @@ export default function HomePage() {
     },
   });
 
-  const performSearch = async (data: NameSearchInput, isVoiceCheckIn = false) => {
+  const performSearch = async (data: NameSearchInput, isVoiceCheckIn: boolean = false) => {
     setIsLoading(true);
     setError(null);
     setUserInfo(data);
@@ -86,8 +88,8 @@ export default function HomePage() {
       setIsSearched(true);
       setCurrentStep(results.length > 0 ? 'appointments' : 'help');
 
-      // Auto-announce results for voice check-in
-      if (isVoiceCheckIn) {
+      // Auto-announce results for voice check-in ONLY
+      if (isVoiceCheckIn === true) {
         setTimeout(() => {
           announceResultsForCheckIn(results);
         }, 500);
@@ -96,9 +98,10 @@ export default function HomePage() {
       console.error("Search error:", err);
       const errorMessage = err.message || "An error occurred";
       setError(errorMessage);
-      if (isVoiceCheckIn) {
+      if (isVoiceCheckIn === true) {
+        const langConfig = SUPPORTED_LANGUAGES[selectedLanguage];
         setTimeout(() => {
-          speak(`Sorry, there was an error searching for appointments. Please try again or contact the front desk.`);
+          speak(`Sorry, there was an error searching for appointments. Please try again or contact the front desk.`, langConfig.voiceLang);
         }, 500);
       }
       setCurrentStep('help');
@@ -157,16 +160,19 @@ export default function HomePage() {
   };
 
   const announceResultsForCheckIn = (results: Appointment[]) => {
+    const langConfig = SUPPORTED_LANGUAGES[selectedLanguage];
+    const t = TRANSLATIONS[selectedLanguage];
+
     if (results.length === 0) {
-      speak("No upcoming appointments found. Please check with the front desk.");
+      speak(t.noAppointments, langConfig.voiceLang);
     } else {
       const appointmentText = results.map((apt, idx) => {
         const dateStr = formatDateTime(apt.startUtc);
-        return `Appointment ${idx + 1}: ${dateStr} with ${apt.staff}. ${apt.notes ? `Notes: ${apt.notes}. ` : ""}`;
-      }).join(". ");
+        return t.appointmentDetails(idx, dateStr, apt.staff, apt.notes);
+      }).join(" ");
 
-      const message = `Found ${results.length} appointment${results.length === 1 ? "" : "s"}. ${appointmentText}. You are now checked in. Thank you!`;
-      speak(message);
+      const message = `${t.foundAppointments(results.length)} ${appointmentText} ${t.checkedIn}`;
+      speak(message, langConfig.voiceLang);
     }
   };
 
@@ -246,6 +252,9 @@ export default function HomePage() {
             onAgentRequest={() => setCurrentStep('agent-interaction')}
             onStepChange={setCurrentStep}
             onReset={resetFlow}
+            isSpeaking={isSpeaking}
+            onToggleAudio={isSpeaking ? stop : announceResults}
+            isAudioSupported={isSupported}
           />
         );
       default:

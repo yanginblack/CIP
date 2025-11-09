@@ -1,6 +1,12 @@
+import { AudioButton } from "@/components/AudioButton";
 import { HelpStepProps } from "./types";
 
-export function HelpStep({ onAgentRequest }: HelpStepProps) {
+export function HelpStep({
+  onAgentRequest,
+  isSpeaking,
+  onToggleAudio,
+  isAudioSupported
+}: HelpStepProps) {
   return (
     <div className="space-y-6">
       <div className="text-center">
@@ -11,6 +17,16 @@ export function HelpStep({ onAgentRequest }: HelpStepProps) {
           We couldn&apos;t find your appointment
         </p>
       </div>
+
+      {isSpeaking !== undefined && onToggleAudio && isAudioSupported !== undefined && (
+        <div className="flex justify-end">
+          <AudioButton
+            isSpeaking={isSpeaking}
+            onToggle={onToggleAudio}
+            isSupported={isAudioSupported}
+          />
+        </div>
+      )}
 
       <div className="bg-yellow-50 p-6 rounded-lg space-y-4">
         <p className="text-yellow-800">
