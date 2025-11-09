@@ -23,12 +23,16 @@ export function WelcomeStep({
         </p>
       </div>
 
-      <form onSubmit={handleSubmit(onSubmit)} className="space-y-6 max-w-md mx-auto">
+      <form onSubmit={handleSubmit(onSubmit)} className="space-y-6 max-w-md mx-auto" autoComplete="off">
         <div className="space-y-4">
           <input
             {...formRegister("firstName")}
             className="w-full px-6 py-4 text-lg border-2 border-purple-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
             placeholder="First Name"
+            autoComplete="off"
+            autoCorrect="off"
+            autoCapitalize="off"
+            spellCheck="false"
           />
           {formErrors.firstName && (
             <p className="text-red-600 text-sm">{formErrors.firstName.message}</p>
@@ -38,6 +42,10 @@ export function WelcomeStep({
             {...formRegister("lastName")}
             className="w-full px-6 py-4 text-lg border-2 border-purple-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
             placeholder="Last Name"
+            autoComplete="off"
+            autoCorrect="off"
+            autoCapitalize="off"
+            spellCheck="false"
           />
           {formErrors.lastName && (
             <p className="text-red-600 text-sm">{formErrors.lastName.message}</p>
