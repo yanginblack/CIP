@@ -99,92 +99,119 @@ export function WelcomeStep({
 
   return (
     <div className="text-center space-y-8">
-      <div className="space-y-4">
-        <h1 className="text-4xl font-bold text-purple-900 dark:text-purple-300">Welcome</h1>
-        <p className="text-lg text-gray-600 dark:text-gray-300">
-          Please enter your name to check in
+      <div className="space-y-6">
+        <h1 className="text-4xl font-bold text-light-plum dark:text-lighter-plum">Welcome to Our Center</h1>
+        <p className="text-lg text-gray-600 dark:text-gray-300 leading-relaxed">
+          Experience accessible services designed for independent living. Our compassionate team is dedicated to helping you thrive and maintain your independence.
         </p>
       </div>
 
       <form
         onSubmit={handleSubmit(onSubmit)}
-        className="space-y-6 max-w-md mx-auto"
+        className="space-y-8 max-w-2xl mx-auto"
         autoComplete="off"
       >
+        {/* Name Inputs */}
         <div className="space-y-4">
-          <input
-            {...formRegister("firstName")}
-            className="w-full px-6 py-4 text-lg border-2 border-purple-300 dark:border-purple-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-            placeholder="First Name"
-            autoComplete="off"
-            autoCorrect="off"
-            autoCapitalize="off"
-            spellCheck="false"
-          />
-          {formErrors.firstName && (
-            <p className="text-red-600 text-sm">
-              {formErrors.firstName.message}
-            </p>
-          )}
+          <div>
+            <input
+              {...formRegister("firstName")}
+              className="w-full px-6 py-4 text-xl bg-white dark:bg-purple-dark text-gray-900 dark:text-gray-100 border-2 border-gray-300 dark:border-lighter-plum/50 rounded-xl focus:ring-2 focus:ring-light-plum focus:border-transparent transition-all duration-200"
+              placeholder="First Name"
+              autoComplete="off"
+              autoCorrect="off"
+              autoCapitalize="words"
+              spellCheck="false"
+            />
+            {formErrors.firstName && (
+              <p className="text-red-500 dark:text-red-400 text-sm mt-2">{formErrors.firstName.message}</p>
+            )}
+          </div>
 
-          <input
-            {...formRegister("lastName")}
-            className="w-full px-6 py-4 text-lg border-2 border-purple-300 dark:border-purple-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-            placeholder="Last Name"
-            autoComplete="off"
-            autoCorrect="off"
-            autoCapitalize="off"
-            spellCheck="false"
-          />
-          {formErrors.lastName && (
-            <p className="text-red-600 text-sm">
-              {formErrors.lastName.message}
-            </p>
-          )}
+          <div>
+            <input
+              {...formRegister("lastName")}
+              className="w-full px-6 py-4 text-xl bg-white dark:bg-purple-dark text-gray-900 dark:text-gray-100 border-2 border-gray-300 dark:border-lighter-plum/50 rounded-xl focus:ring-2 focus:ring-light-plum focus:border-transparent transition-all duration-200"
+              placeholder="Last Name"
+              autoComplete="off"
+              autoCorrect="off"
+              autoCapitalize="words"
+              spellCheck="false"
+            />
+            {formErrors.lastName && (
+              <p className="text-red-500 dark:text-red-400 text-sm mt-2">{formErrors.lastName.message}</p>
+            )}
+          </div>
         </div>
 
-        <div className="flex gap-3">
-          {isVoiceSupported && (
-            <div className="flex gap-2">
-              {/* Green Audio Check-in Button - always visible when voice supported */}
-              {startCheckIn && (
-                <button
-                  type="button"
-                  onClick={startCheckIn}
-                  disabled={disableButton}
-                  className={`flex items-center justify-center gap-2 px-6 py-2 rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 transition-colors text-white ${
-                    disableButton
-                      ? "bg-green-400 cursor-not-allowed opacity-75 animate-pulse"
-                      : "bg-green-600 hover:bg-green-700 focus:ring-green-500"
-                  }`}
-                  aria-label="Start audio check-in"
-                >
-                  <MicrophoneIcon />
-                  <span>{showListeningText ? "Listening..." : "Audio Check-in"}</span>
-                </button>
-              )}
+        {/* Service Selection */}
+        <div className="space-y-4">
+          <h3 className="text-xl font-semibold text-gray-800 dark:text-gray-200 text-left">Select a Service:</h3>
+          <div className="grid grid-cols-2 gap-4">
+            <button
+              type="button"
+              className="px-6 py-4 bg-light-plum hover:bg-purple-700 text-white rounded-xl transition-all duration-200 font-semibold text-lg shadow-md hover:shadow-lg"
+            >
+              Senior Services
+            </button>
+            <button
+              type="button"
+              className="px-6 py-4 bg-amber hover:bg-yellow-600 text-white rounded-xl transition-all duration-200 font-semibold text-lg shadow-md hover:shadow-lg"
+            >
+              Housing Assistance
+            </button>
+            <button
+              type="button"
+              className="px-6 py-4 bg-light-plum hover:bg-purple-700 text-white rounded-xl transition-all duration-200 font-semibold text-lg shadow-md hover:shadow-lg"
+            >
+              Youth Programs
+            </button>
+            <button
+              type="button"
+              className="px-6 py-4 bg-lighter-plum hover:bg-purple-500 text-white rounded-xl transition-all duration-200 font-semibold text-lg shadow-md hover:shadow-lg"
+            >
+              Travel Program
+            </button>
+          </div>
+        </div>
 
-              {/* Red Cancel Button - appears after 2-second delay when audio is active */}
-              {showCancelButton && cancelCheckIn && (
-                <button
-                  type="button"
-                  onClick={cancelCheckIn}
-                  className="flex items-center justify-center gap-2 px-6 py-2 rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 transition-colors bg-red-600 hover:bg-red-700 focus:ring-red-500 text-white"
-                  aria-label="Cancel audio check-in"
-                >
-                  <span>✖</span>
-                  <span>Cancel</span>
-                </button>
-              )}
-            </div>
-          )}
+        {/* Action Buttons */}
+        <div className="flex gap-4">
           <button
             type="submit"
             disabled={isLoading}
-            className="flex-1 bg-purple-600 text-white py-4 px-8 text-lg rounded-lg hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500 disabled:opacity-50 transition-colors"
+            className="flex-1 bg-light-plum hover:bg-purple-700 text-white py-6 px-8 text-xl font-bold rounded-xl transition-all duration-200 shadow-lg hover:shadow-xl disabled:opacity-50"
           >
-            {isLoading ? "Searching..." : "Continue"}
+            {isLoading ? "Searching..." : "Check In Now"}
           </button>
+
+          {isVoiceSupported && startCheckIn && (
+            <button
+              type="button"
+              onClick={startCheckIn}
+              disabled={disableButton}
+              className={`flex items-center justify-center gap-3 px-8 py-6 rounded-xl transition-all duration-200 font-bold text-xl shadow-lg hover:shadow-xl ${
+                disableButton
+                  ? "bg-amber/70 cursor-not-allowed opacity-75 animate-pulse text-white"
+                  : "bg-amber hover:bg-yellow-600 text-white"
+              }`}
+            >
+              <MicrophoneIcon />
+              <span>{showListeningText ? "Listening..." : "Voice"}</span>
+            </button>
+          )}
+
+          {/* Cancel Button - appears after delay */}
+          {showCancelButton && cancelCheckIn && (
+            <button
+              type="button"
+              onClick={cancelCheckIn}
+              className="flex items-center justify-center gap-2 px-6 py-6 bg-red-600 hover:bg-red-700 text-white rounded-xl transition-all duration-200 shadow-lg hover:shadow-xl font-bold"
+            >
+              <span>✖</span>
+              <span>Cancel</span>
+            </button>
+          )}
         </div>
       </form>
     </div>

@@ -61,7 +61,7 @@ export function AccessibilityControls({ className = "" }: AccessibilityControlsP
         <button
           onClick={zoomOut}
           disabled={zoomLevel <= 0.8}
-          className="w-12 h-12 bg-white dark:bg-gray-700 border-2 border-purple-300 dark:border-purple-500 rounded-full flex items-center justify-center text-purple-700 dark:text-purple-300 font-bold text-xl hover:bg-purple-50 dark:hover:bg-gray-600 hover:border-purple-400 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-md hover:shadow-lg"
+          className="w-12 h-12 bg-white dark:bg-purple-dark border-2 border-light-plum dark:border-lighter-plum rounded-full flex items-center justify-center text-light-plum dark:text-lighter-plum font-bold text-xl hover:bg-purple-50 dark:hover:bg-navy-dark hover:border-lighter-plum disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-md hover:shadow-lg"
           aria-label="Zoom out"
           title="Zoom out"
         >
@@ -73,7 +73,7 @@ export function AccessibilityControls({ className = "" }: AccessibilityControlsP
         <button
           onClick={zoomIn}
           disabled={zoomLevel >= 2.0}
-          className="w-12 h-12 bg-white dark:bg-gray-700 border-2 border-purple-300 dark:border-purple-500 rounded-full flex items-center justify-center text-purple-700 dark:text-purple-300 font-bold text-xl hover:bg-purple-50 dark:hover:bg-gray-600 hover:border-purple-400 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-md hover:shadow-lg"
+          className="w-12 h-12 bg-white dark:bg-purple-dark border-2 border-light-plum dark:border-lighter-plum rounded-full flex items-center justify-center text-light-plum dark:text-lighter-plum font-bold text-xl hover:bg-purple-50 dark:hover:bg-navy-dark hover:border-lighter-plum disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-md hover:shadow-lg"
           aria-label="Zoom in"
           title="Zoom in"
         >
