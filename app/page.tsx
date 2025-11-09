@@ -305,9 +305,9 @@ export default function HomePage() {
   };
 
   return (
-    <main className="min-h-screen bg-gradient-to-br from-purple-100 via-white to-blue-100 dark:from-purple-900 dark:via-gray-900 dark:to-blue-900 py-8 px-4 pb-24">
+    <main className="min-h-screen bg-gradient-to-br from-purple-100 via-white to-blue-100 dark:from-navy-dark dark:via-purple-dark dark:to-navy-dark py-8 px-4 pb-24" aria-label="Check-in kiosk">
       <div className="max-w-2xl mx-auto">
-        <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-8 min-h-[600px] flex flex-col justify-center">
+        <div className="bg-white dark:bg-purple-dark rounded-2xl shadow-xl p-8 min-h-[600px] flex flex-col justify-center" role="region" aria-label="Main check-in content">
           {error && (
             <ErrorMessage error={error} onDismiss={() => setError(null)} />
           )}
