@@ -1,33 +1,37 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { nameSearchSchema, type NameSearchInput } from "@/lib/validations";
-import { useSpeech } from "@/hooks/useSpeech";
 import { useAudioCheckIn } from "@/hooks/useAudioCheckIn";
+import { useSpeech } from "@/hooks/useSpeech";
 import { SUPPORTED_LANGUAGES, TRANSLATIONS } from "@/lib/languageConfig";
+import { nameSearchSchema, type NameSearchInput } from "@/lib/validations";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useEffect, useState } from "react";
+import { useForm } from "react-hook-form";
 
 // Component imports
-import { WelcomeStep } from "@/components/checkin/WelcomeStep";
-import { AppointmentsList } from "@/components/checkin/AppointmentsList";
-import { DepartmentRouting } from "@/components/checkin/DepartmentRouting";
 import { AgentInteraction } from "@/components/checkin/AgentInteraction";
+import { AppointmentsList } from "@/components/checkin/AppointmentsList";
 import { ConfirmationStep } from "@/components/checkin/ConfirmationStep";
+import { DepartmentRouting } from "@/components/checkin/DepartmentRouting";
 import { HelpStep } from "@/components/checkin/HelpStep";
 import { PersistentNavigation } from "@/components/checkin/PersistentNavigation";
+import { WelcomeStep } from "@/components/checkin/WelcomeStep";
 import { ErrorMessage } from "@/components/shared/ErrorMessage";
 
 // Types
 import { Appointment, CheckInStep } from "@/components/checkin/types";
 
 export default function HomePage() {
-  const [currentStep, setCurrentStep] = useState<CheckInStep>('welcome');
+  const [currentStep, setCurrentStep] = useState<CheckInStep>("welcome");
   const [appointments, setAppointments] = useState<Appointment[]>([]);
-  const [selectedAppointment, setSelectedAppointment] = useState<Appointment | null>(null);
+  const [selectedAppointment, setSelectedAppointment] =
+    useState<Appointment | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [userInfo, setUserInfo] = useState<{ firstName: string; lastName: string } | null>(null);
+  const [userInfo, setUserInfo] = useState<{
+    firstName: string;
+    lastName: string;
+  } | null>(null);
   const [isSearched, setIsSearched] = useState(false);
 
   const { speak, stop, isSpeaking, isSupported } = useSpeech();
@@ -45,6 +49,7 @@ export default function HomePage() {
   // Audio check-in hook
   const {
     startCheckIn,
+    cancelCheckIn,
     isListening,
     isSpeaking: isCheckInSpeaking,
     isVoiceSupported,
@@ -61,7 +66,10 @@ export default function HomePage() {
     },
   });
 
-  const performSearch = async (data: NameSearchInput, isVoiceCheckIn: boolean = false) => {
+  const performSearch = async (
+    data: NameSearchInput,
+    isVoiceCheckIn: boolean = false
+  ) => {
     setIsLoading(true);
     setError(null);
     setUserInfo(data);
@@ -86,7 +94,7 @@ export default function HomePage() {
       console.log("Search results:", results);
       setAppointments(results);
       setIsSearched(true);
-      setCurrentStep(results.length > 0 ? 'appointments' : 'help');
+      setCurrentStep(results.length > 0 ? "appointments" : "help");
 
       // Auto-announce results for voice check-in ONLY
       if (isVoiceCheckIn === true) {
@@ -101,10 +109,13 @@ export default function HomePage() {
       if (isVoiceCheckIn === true) {
         const langConfig = SUPPORTED_LANGUAGES[selectedLanguage];
         setTimeout(() => {
-          speak(`Sorry, there was an error searching for appointments. Please try again or contact the front desk.`, langConfig.voiceLang);
+          speak(
+            `Sorry, there was an error searching for appointments. Please try again or contact the front desk.`,
+            langConfig.voiceLang
+          );
         }, 500);
       }
-      setCurrentStep('help');
+      setCurrentStep("help");
     } finally {
       setIsLoading(false);
     }
@@ -112,7 +123,7 @@ export default function HomePage() {
 
   const handleAppointmentSelect = (appointment: Appointment) => {
     setSelectedAppointment(appointment);
-    setCurrentStep('department-routing');
+    setCurrentStep("department-routing");
   };
 
   const handleCheckIn = async () => {
@@ -120,8 +131,8 @@ export default function HomePage() {
 
     setIsLoading(true);
     try {
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      setCurrentStep('confirmation');
+      await new Promise((resolve) => setTimeout(resolve, 1500));
+      setCurrentStep("confirmation");
     } catch (err: any) {
       setError("Check-in failed. Please try again.");
     } finally {
@@ -130,7 +141,7 @@ export default function HomePage() {
   };
 
   const resetFlow = () => {
-    setCurrentStep('welcome');
+    setCurrentStep("welcome");
     setAppointments([]);
     setSelectedAppointment(null);
     setError(null);
@@ -149,12 +160,22 @@ export default function HomePage() {
 
   const announceResults = () => {
     if (appointments.length === 0) {
-      speak("No upcoming appointments found. Please check the spelling and try again.");
+      speak(
+        "No upcoming appointments found. Please check the spelling and try again."
+      );
     } else {
-      const resultText = `Found ${appointments.length} appointment${appointments.length === 1 ? "" : "s"}. ` +
-        appointments.map((apt, idx) =>
-          `Appointment ${idx + 1}: ${formatDateTime(apt.startUtc)} with ${apt.staff}. ${apt.notes ? `Notes: ${apt.notes}` : ""}`
-        ).join(". ");
+      const resultText =
+        `Found ${appointments.length} appointment${
+          appointments.length === 1 ? "" : "s"
+        }. ` +
+        appointments
+          .map(
+            (apt, idx) =>
+              `Appointment ${idx + 1}: ${formatDateTime(apt.startUtc)} with ${
+                apt.staff
+              }. ${apt.notes ? `Notes: ${apt.notes}` : ""}`
+          )
+          .join(". ");
       speak(resultText);
     }
   };
@@ -166,12 +187,16 @@ export default function HomePage() {
     if (results.length === 0) {
       speak(t.noAppointments, langConfig.voiceLang);
     } else {
-      const appointmentText = results.map((apt, idx) => {
-        const dateStr = formatDateTime(apt.startUtc);
-        return t.appointmentDetails(idx, dateStr, apt.staff, apt.notes);
-      }).join(" ");
+      const appointmentText = results
+        .map((apt, idx) => {
+          const dateStr = formatDateTime(apt.startUtc);
+          return t.appointmentDetails(idx, dateStr, apt.staff, apt.notes);
+        })
+        .join(" ");
 
-      const message = `${t.foundAppointments(results.length)} ${appointmentText} ${t.checkedIn}`;
+      const message = `${t.foundAppointments(
+        results.length
+      )} ${appointmentText} ${t.checkedIn}`;
       speak(message, langConfig.voiceLang);
     }
   };
@@ -190,16 +215,17 @@ export default function HomePage() {
     };
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [isSearched, isSpeaking, appointments, speak, stop]);
+  }, [isSearched, isSpeaking, speak, stop, announceResults]);
 
   const getCurrentStepContent = () => {
     switch (currentStep) {
-      case 'welcome':
+      case "welcome":
         return (
           <WelcomeStep
             isLoading={isLoading}
             onSubmit={performSearch}
             startCheckIn={startCheckIn}
+            cancelCheckIn={cancelCheckIn}
             isListening={isListening}
             isCheckInSpeaking={isCheckInSpeaking}
             isVoiceSupported={isVoiceSupported}
@@ -210,7 +236,7 @@ export default function HomePage() {
             onReset={resetFlow}
           />
         );
-      case 'appointments':
+      case "appointments":
         return (
           <AppointmentsList
             appointments={appointments}
@@ -224,7 +250,7 @@ export default function HomePage() {
             onReset={resetFlow}
           />
         );
-      case 'department-routing':
+      case "department-routing":
         return selectedAppointment ? (
           <DepartmentRouting
             selectedAppointment={selectedAppointment}
@@ -235,9 +261,9 @@ export default function HomePage() {
             onReset={resetFlow}
           />
         ) : null;
-      case 'agent-interaction':
+      case "agent-interaction":
         return <AgentInteraction />;
-      case 'confirmation':
+      case "confirmation":
         return (
           <ConfirmationStep
             selectedAppointment={selectedAppointment}
@@ -246,10 +272,10 @@ export default function HomePage() {
             onStepChange={setCurrentStep}
           />
         );
-      case 'help':
+      case "help":
         return (
           <HelpStep
-            onAgentRequest={() => setCurrentStep('agent-interaction')}
+            onAgentRequest={() => setCurrentStep("agent-interaction")}
             onStepChange={setCurrentStep}
             onReset={resetFlow}
             isSpeaking={isSpeaking}
@@ -263,6 +289,7 @@ export default function HomePage() {
             isLoading={isLoading}
             onSubmit={performSearch}
             startCheckIn={startCheckIn}
+            cancelCheckIn={cancelCheckIn}
             isListening={isListening}
             isCheckInSpeaking={isCheckInSpeaking}
             isVoiceSupported={isVoiceSupported}
@@ -281,10 +308,7 @@ export default function HomePage() {
       <div className="max-w-2xl mx-auto">
         <div className="bg-white rounded-2xl shadow-xl p-8 min-h-[600px] flex flex-col justify-center">
           {error && (
-            <ErrorMessage
-              error={error}
-              onDismiss={() => setError(null)}
-            />
+            <ErrorMessage error={error} onDismiss={() => setError(null)} />
           )}
 
           {getCurrentStepContent()}
@@ -293,7 +317,7 @@ export default function HomePage() {
         <PersistentNavigation
           currentStep={currentStep}
           onReset={resetFlow}
-          onAgentRequest={() => setCurrentStep('agent-interaction')}
+          onAgentRequest={() => setCurrentStep("agent-interaction")}
         />
       </div>
     </main>
