@@ -1,9 +1,10 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 
-export function useVoiceInput() {
+export function useVoiceInput(initialLang: string = "en-US") {
   const [isSupported, setIsSupported] = useState(false);
   const [isListening, setIsListening] = useState(false);
   const [transcript, setTranscript] = useState("");
+  const [language, setLanguage] = useState(initialLang);
   const recognitionRef = useRef<any>(null);
 
   useEffect(() => {
@@ -16,7 +17,7 @@ export function useVoiceInput() {
       recognitionRef.current = new SpeechRecognition();
       recognitionRef.current.continuous = false;
       recognitionRef.current.interimResults = false;
-      recognitionRef.current.lang = "en-US";
+      recognitionRef.current.lang = language;
 
       recognitionRef.current.onresult = (event: any) => {
         const result = event.results[0][0].transcript;
@@ -39,10 +40,19 @@ export function useVoiceInput() {
         recognitionRef.current.stop();
       }
     };
-  }, []);
+  }, [language]);
+
+  // Update recognition language when language changes
+  useEffect(() => {
+    if (recognitionRef.current) {
+      recognitionRef.current.lang = language;
+    }
+  }, [language]);
 
   const startListening = useCallback(() => {
     if (!isSupported || !recognitionRef.current) return;
+
+    console.log(`[VoiceInput] Starting to listen with language: ${recognitionRef.current.lang}`);
 
     try {
       setTranscript("");
@@ -58,13 +68,14 @@ export function useVoiceInput() {
         try {
           recognitionRef.current.start();
           setIsListening(true);
+          console.log("[VoiceInput] ✅ Recognition started successfully");
         } catch (error) {
-          console.error("Failed to start recognition:", error);
+          console.error("[VoiceInput] ❌ Failed to start recognition:", error);
           setIsListening(false);
         }
       }, 100);
     } catch (error) {
-      console.error("Failed to start recognition:", error);
+      console.error("[VoiceInput] ❌ Failed to start recognition:", error);
       setIsListening(false);
     }
   }, [isSupported]);
@@ -76,12 +87,18 @@ export function useVoiceInput() {
     }
   }, []);
 
+  const changeLanguage = useCallback((newLang: string) => {
+    setLanguage(newLang);
+  }, []);
+
   return {
     isSupported,
     isListening,
     transcript,
+    language,
     startListening,
     stopListening,
+    changeLanguage,
     resetTranscript: () => setTranscript(""),
   };
 }

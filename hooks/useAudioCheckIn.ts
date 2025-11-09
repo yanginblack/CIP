@@ -7,14 +7,23 @@ import {
   isPositiveConfirmation,
   isNegativeConfirmation,
 } from "@/lib/audioUtils";
+import {
+  SupportedLanguage,
+  SUPPORTED_LANGUAGES,
+  TRANSLATIONS,
+  detectLanguageSelection,
+} from "@/lib/languageConfig";
 
 interface UseAudioCheckInOptions {
   onNameConfirmed: (name: { firstName: string; lastName: string }) => void;
   onReset?: () => void;
 }
 
+type CheckInState = "language_selection" | "name_input" | "name_confirmation";
+
 export function useAudioCheckIn({ onNameConfirmed, onReset }: UseAudioCheckInOptions) {
-  const [waitingForConfirmation, setWaitingForConfirmation] = useState(false);
+  const [selectedLanguage, setSelectedLanguage] = useState<SupportedLanguage>("en");
+  const [checkInState, setCheckInState] = useState<CheckInState>("language_selection");
   const [capturedName, setCapturedName] = useState<{
     firstName: string;
     lastName: string;
@@ -26,8 +35,13 @@ export function useAudioCheckIn({ onNameConfirmed, onReset }: UseAudioCheckInOpt
     transcript,
     startListening,
     resetTranscript,
+    changeLanguage,
     isSupported: isVoiceSupported,
   } = useVoiceInput();
+
+  // Get current language config
+  const langConfig = SUPPORTED_LANGUAGES[selectedLanguage];
+  const t = TRANSLATIONS[selectedLanguage];
 
   // Start the audio check-in process
   const startCheckIn = useCallback(() => {
@@ -35,16 +49,40 @@ export function useAudioCheckIn({ onNameConfirmed, onReset }: UseAudioCheckInOpt
 
     resetTranscript();
     setCapturedName(null);
-    setWaitingForConfirmation(false);
+    setCheckInState("language_selection");
+    setSelectedLanguage("en"); // Reset to English
 
     if (onReset) {
       onReset();
     }
 
-    speak("Please say your first name and last name.");
+    // Multi-language welcome prompt
+    // Speak "Welcome" in English first
+    speak("Welcome!", "en-US");
+
+    setTimeout(() => {
+      speak("Please say:", "en-US");
+    }, 1500);
+
+    setTimeout(() => {
+      speak("English", "en-US");
+    }, 2500);
+
+    setTimeout(() => {
+      speak("Español", "es-US");
+    }, 3500);
+
+    setTimeout(() => {
+      speak("中文", "zh-CN");
+    }, 4500);
+
+    setTimeout(() => {
+      speak("to select your language", "en-US");
+    }, 5500);
+
     setTimeout(() => {
       startListening();
-    }, 2000);
+    }, 7000);
   }, [isListening, speak, startListening, resetTranscript, onReset]);
 
   // Process voice transcript
@@ -52,40 +90,95 @@ export function useAudioCheckIn({ onNameConfirmed, onReset }: UseAudioCheckInOpt
     if (!transcript) return;
 
     const lowerTranscript = transcript.toLowerCase().trim();
+    console.log(`[AudioCheckIn] State: ${checkInState}, Transcript: "${transcript}", Lang: ${selectedLanguage}`);
 
-    // Handle confirmation response
-    if (waitingForConfirmation && capturedName) {
-      if (isPositiveConfirmation(lowerTranscript)) {
+    // STATE: Language Selection
+    if (checkInState === "language_selection") {
+      const detectedLang = detectLanguageSelection(transcript);
+
+      if (detectedLang) {
+        setSelectedLanguage(detectedLang);
+        const newLangConfig = SUPPORTED_LANGUAGES[detectedLang];
+        const newTranslations = TRANSLATIONS[detectedLang];
+
+        // Special handling for Chinese - warn about limited support
+        if (detectedLang === 'zh') {
+          // Announce in Chinese
+          resetTranscript();
+          speak("中文支持有限。", "zh-CN");
+
+          setTimeout(() => {
+            speak("请说您的名字和姓氏。", "zh-CN");
+          }, 2000);
+
+          setTimeout(() => {
+            speak("Or you can say your name in English.", "en-US");
+          }, 4000);
+
+          // Keep recognition in English as fallback due to poor Chinese support
+          changeLanguage("en-US");
+          setCheckInState("name_input");
+
+          setTimeout(() => {
+            startListening();
+          }, 6000);
+        } else {
+          // Update voice recognition language for English/Spanish
+          changeLanguage(newLangConfig.voiceLang);
+
+          // Confirm language selection and ask for name
+          resetTranscript();
+          setCheckInState("name_input");
+
+          speak(newTranslations.namePrompt, newLangConfig.voiceLang, () => {
+            startListening();
+          });
+        }
+      } else {
+        // Language not understood
+        resetTranscript();
+        speak(t.languageNotUnderstood, langConfig.voiceLang);
+        setTimeout(() => {
+          startListening();
+        }, 3000);
+      }
+    }
+    // STATE: Name Confirmation
+    else if (checkInState === "name_confirmation" && capturedName) {
+      console.log(`[AudioCheckIn] Checking confirmation - Positive: ${isPositiveConfirmation(lowerTranscript, selectedLanguage)}, Negative: ${isNegativeConfirmation(lowerTranscript, selectedLanguage)}`);
+
+      if (isPositiveConfirmation(lowerTranscript, selectedLanguage)) {
         // User confirmed, proceed
-        setWaitingForConfirmation(false);
-        speak("Searching for your appointments. Please wait.");
+        console.log("[AudioCheckIn] ✅ User confirmed!");
+        setCheckInState("name_input"); // Reset state
+        speak(t.searching, langConfig.voiceLang);
         resetTranscript();
         setTimeout(() => {
           onNameConfirmed(capturedName);
         }, 1500);
-      } else if (isNegativeConfirmation(lowerTranscript)) {
-        // User said no, restart
+      } else if (isNegativeConfirmation(lowerTranscript, selectedLanguage)) {
+        // User said no, restart name input
         setCapturedName(null);
-        setWaitingForConfirmation(false);
+        setCheckInState("name_input");
         resetTranscript();
 
         if (onReset) {
           onReset();
         }
 
-        speak("Let's try again. Please say your first name and last name.");
-        setTimeout(() => {
+        speak(t.tryAgain, langConfig.voiceLang, () => {
           startListening();
-        }, 3000);
+        });
       } else {
         // Unclear response
         resetTranscript();
-        speak("I didn't catch that. Please say yes or no.");
-        setTimeout(() => {
+        speak(t.didNotCatch, langConfig.voiceLang, () => {
           startListening();
-        }, 2500);
+        });
       }
-    } else if (!waitingForConfirmation && !capturedName) {
+    }
+    // STATE: Name Input
+    else if (checkInState === "name_input" && !capturedName) {
       // Extract name from transcript
       const parsedName = parseFullName(transcript);
 
@@ -95,31 +188,40 @@ export function useAudioCheckIn({ onNameConfirmed, onReset }: UseAudioCheckInOpt
         // Confirm with user - spell out the names
         const firstNameSpelled = spellName(parsedName.firstName);
         const lastNameSpelled = spellName(parsedName.lastName);
-        const confirmationMessage = `I heard ${parsedName.firstName}, spelled ${firstNameSpelled}, ${parsedName.lastName}, spelled ${lastNameSpelled}. Is that correct? Please say yes or no.`;
+        const confirmationMessage = t.nameConfirmation(
+          parsedName.firstName,
+          firstNameSpelled,
+          parsedName.lastName,
+          lastNameSpelled
+        );
 
         resetTranscript();
-        speak(confirmationMessage);
-        setWaitingForConfirmation(true);
-        setTimeout(() => {
+        setCheckInState("name_confirmation");
+        // Use onComplete callback to start listening AFTER speech finishes
+        speak(confirmationMessage, langConfig.voiceLang, () => {
+          console.log("[AudioCheckIn] Confirmation message finished, starting to listen...");
           startListening();
-        }, confirmationMessage.length * 50);
+        });
       } else if (transcript.trim().split(/\s+/).length === 1) {
         resetTranscript();
-        speak("I only heard one name. Please say both your first name and last name.");
-        setTimeout(() => {
+        speak(t.onlyOneName, langConfig.voiceLang, () => {
           startListening();
-        }, 3500);
+        });
       }
     }
   }, [
     transcript,
-    waitingForConfirmation,
+    checkInState,
     capturedName,
+    selectedLanguage,
     speak,
     startListening,
     resetTranscript,
+    changeLanguage,
     onNameConfirmed,
     onReset,
+    t,
+    langConfig,
   ]);
 
   return {
@@ -128,6 +230,7 @@ export function useAudioCheckIn({ onNameConfirmed, onReset }: UseAudioCheckInOpt
     isSpeaking,
     isVoiceSupported,
     capturedName,
-    waitingForConfirmation,
+    selectedLanguage,
+    checkInState,
   };
 }

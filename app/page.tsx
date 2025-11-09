@@ -8,6 +8,7 @@ import { useSpeech } from "@/hooks/useSpeech";
 import { useAudioCheckIn } from "@/hooks/useAudioCheckIn";
 import { AudioButton } from "@/components/AudioButton";
 import { MicrophoneIcon } from "@/components/icons";
+import { SUPPORTED_LANGUAGES, TRANSLATIONS } from "@/lib/languageConfig";
 
 type Appointment = {
   id: string;
@@ -38,6 +39,7 @@ export default function HomePage() {
     isListening,
     isSpeaking: isCheckInSpeaking,
     isVoiceSupported,
+    selectedLanguage,
   } = useAudioCheckIn({
     onNameConfirmed: (name) => {
       setValue("firstName", name.firstName);
@@ -86,8 +88,9 @@ export default function HomePage() {
       const errorMessage = err.message || "An error occurred";
       setError(errorMessage);
       if (isVoiceCheckIn) {
+        const langConfig = SUPPORTED_LANGUAGES[selectedLanguage];
         setTimeout(() => {
-          speak(`Sorry, there was an error searching for appointments. Please try again or contact the front desk.`);
+          speak(`Sorry, there was an error searching for appointments. Please try again or contact the front desk.`, langConfig.voiceLang);
         }, 500);
       }
     } finally {
@@ -120,16 +123,19 @@ export default function HomePage() {
   };
 
   const announceResultsForCheckIn = (results: Appointment[]) => {
+    const langConfig = SUPPORTED_LANGUAGES[selectedLanguage];
+    const t = TRANSLATIONS[selectedLanguage];
+
     if (results.length === 0) {
-      speak("No upcoming appointments found. Please check with the front desk.");
+      speak(t.noAppointments, langConfig.voiceLang);
     } else {
       const appointmentText = results.map((apt, idx) => {
         const dateStr = formatDateTime(apt.startUtc);
-        return `Appointment ${idx + 1}: ${dateStr} with ${apt.staff}. ${apt.notes ? `Notes: ${apt.notes}. ` : ""}`;
-      }).join(". ");
+        return t.appointmentDetails(idx, dateStr, apt.staff, apt.notes);
+      }).join(" ");
 
-      const message = `Found ${results.length} appointment${results.length === 1 ? "" : "s"}. ${appointmentText}. You are now checked in. Thank you!`;
-      speak(message);
+      const message = `${t.foundAppointments(results.length)} ${appointmentText} ${t.checkedIn}`;
+      speak(message, langConfig.voiceLang);
     }
   };
 
