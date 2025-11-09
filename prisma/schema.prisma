@@ -10,14 +10,16 @@ datasource db {
 }
 
 model Appointment {
-  id        String   @id @default(cuid())
-  firstName String
-  lastName  String
-  startUtc  DateTime
-  staff     String
-  notes     String?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id          String    @id @default(cuid())
+  firstName   String
+  lastName    String
+  startUtc    DateTime
+  staff       String
+  notes       String?
+  checkinTime DateTime?
+  checkoutTime DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
 
   @@index([lastName, firstName])
   @@index([startUtc])
@@ -27,5 +29,17 @@ model AdminUser {
   id        String   @id @default(cuid())
   email     String   @unique
   password  String
+  role      String   @default("ADMIN") // ADMIN or SYSTEM_ADMIN
   createdAt DateTime @default(now())
+}
+
+model Staff {
+  staffId        String   @id @default(cuid())
+  name           String
+  service        String
+  googleCalendar String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@index([name])
 }

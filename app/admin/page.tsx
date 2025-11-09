@@ -15,6 +15,8 @@ type Appointment = {
   startUtc: string;
   staff: string;
   notes: string | null;
+  checkinTime: string | null;
+  checkoutTime: string | null;
   createdAt: string;
   updatedAt: string;
 };
@@ -36,11 +38,21 @@ export default function AdminPage() {
   const [selectedAppointment, setSelectedAppointment] =
     useState<Appointment | null>(null);
 
-  // Filter states
+  // Helper function to get today's date in local datetime-local format
+  const getTodayDatetimeLocal = (isStartOfDay: boolean = true) => {
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, "0");
+    const day = String(now.getDate()).padStart(2, "0");
+    const time = isStartOfDay ? "00:00" : "23:59";
+    return `${year}-${month}-${day}T${time}`;
+  };
+
+  // Filter states - default to today's appointments
   const [nameQuery, setNameQuery] = useState("");
   const [staffFilter, setStaffFilter] = useState("");
-  const [fromDate, setFromDate] = useState("");
-  const [toDate, setToDate] = useState("");
+  const [fromDate, setFromDate] = useState(getTodayDatetimeLocal(true));
+  const [toDate, setToDate] = useState(getTodayDatetimeLocal(false));
   const [currentPage, setCurrentPage] = useState(1);
   const [sortField, setSortField] = useState<"startUtc" | "staff">("startUtc");
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
@@ -51,6 +63,10 @@ export default function AdminPage() {
       router.push("/admin/login");
     }
   }, [status, router]);
+
+  // Check if user is system admin
+  const userRole = (session?.user as any)?.role;
+  const isSystemAdmin = userRole === "SYSTEM_ADMIN";
 
   // Build query parameters
   const buildQueryParams = () => {
@@ -137,6 +153,40 @@ export default function AdminPage() {
     },
   });
 
+  // Check-in mutation
+  const checkinMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const response = await fetch(`/api/admin/appointments/${id}/checkin`, {
+        method: "POST",
+      });
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || "Failed to check in");
+      }
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["appointments"] });
+    },
+  });
+
+  // Check-out mutation
+  const checkoutMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const response = await fetch(`/api/admin/appointments/${id}/checkout`, {
+        method: "POST",
+      });
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || "Failed to check out");
+      }
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["appointments"] });
+    },
+  });
+
   const handleSubmit = async (data: AppointmentFormData) => {
     if (selectedAppointment) {
       await updateMutation.mutateAsync({ id: selectedAppointment.id, data });
@@ -167,6 +217,45 @@ export default function AdminPage() {
       dateStyle: "medium",
       timeStyle: "short",
     }).format(date);
+  };
+
+  const getAppointmentStatus = (appointment: Appointment): "Open" | "In Meeting" | "Done" => {
+    if (appointment.checkoutTime) {
+      return "Done";
+    }
+    if (appointment.checkinTime) {
+      return "In Meeting";
+    }
+    return "Open";
+  };
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case "Done":
+        return "bg-green-100 text-green-800";
+      case "In Meeting":
+        return "bg-yellow-100 text-yellow-800";
+      case "Open":
+        return "bg-blue-100 text-blue-800";
+      default:
+        return "bg-gray-100 text-gray-800";
+    }
+  };
+
+  const handleCheckin = async (id: string) => {
+    try {
+      await checkinMutation.mutateAsync(id);
+    } catch (error: any) {
+      alert(error.message || "Failed to check in");
+    }
+  };
+
+  const handleCheckout = async (id: string) => {
+    try {
+      await checkoutMutation.mutateAsync(id);
+    } catch (error: any) {
+      alert(error.message || "Failed to check out");
+    }
   };
 
   const handleSort = (field: "startUtc" | "staff") => {
@@ -221,14 +310,29 @@ export default function AdminPage() {
               </h1>
               <p className="text-sm text-gray-600 mt-1">
                 Logged in as {session?.user?.email}
+                {isSystemAdmin && (
+                  <span className="ml-2 px-2 py-0.5 bg-purple-100 text-purple-700 text-xs font-semibold rounded">
+                    System Admin
+                  </span>
+                )}
               </p>
             </div>
-            <button
-              onClick={() => signOut({ callbackUrl: "/admin/login" })}
-              className="px-4 py-2 text-sm text-red-600 hover:text-red-700 border border-red-600 rounded-md hover:bg-red-50 transition-colors"
-            >
-              Log Out
-            </button>
+            <div className="flex gap-2">
+              {isSystemAdmin && (
+                <button
+                  onClick={() => router.push("/admin/staff")}
+                  className="px-4 py-2 text-sm text-blue-600 hover:text-blue-700 border border-blue-600 rounded-md hover:bg-blue-50 transition-colors"
+                >
+                  Manage Staff
+                </button>
+              )}
+              <button
+                onClick={() => signOut({ callbackUrl: "/admin/login" })}
+                className="px-4 py-2 text-sm text-red-600 hover:text-red-700 border border-red-600 rounded-md hover:bg-red-50 transition-colors"
+              >
+                Log Out
+              </button>
+            </div>
           </div>
 
           {/* Filters */}
@@ -301,13 +405,13 @@ export default function AdminPage() {
               onClick={() => {
                 setNameQuery("");
                 setStaffFilter("");
-                setFromDate("");
-                setToDate("");
+                setFromDate(getTodayDatetimeLocal(true));
+                setToDate(getTodayDatetimeLocal(false));
                 setCurrentPage(1);
               }}
               className="mt-4 px-4 py-2 text-sm text-gray-600 hover:text-gray-800 border border-gray-300 rounded-md hover:bg-gray-100 transition-colors"
             >
-              Clear Filters
+              Reset to Today
             </button>
           </div>
 
@@ -355,6 +459,9 @@ export default function AdminPage() {
                           (sortDirection === "asc" ? "↑" : "↓")}
                       </th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Status
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                         Notes
                       </th>
                       <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -366,44 +473,76 @@ export default function AdminPage() {
                     {sortedAppointments.length === 0 ? (
                       <tr>
                         <td
-                          colSpan={5}
+                          colSpan={6}
                           className="px-6 py-8 text-center text-gray-500"
                         >
                           No appointments found
                         </td>
                       </tr>
                     ) : (
-                      sortedAppointments.map((appointment) => (
-                        <tr key={appointment.id} className="hover:bg-gray-50">
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                            {appointment.firstName} {appointment.lastName}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                            {formatDateTime(appointment.startUtc)}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                            {appointment.staff}
-                          </td>
-                          <td className="px-6 py-4 text-sm text-gray-900 max-w-xs truncate">
-                            {appointment.notes || "-"}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                            <button
-                              onClick={() => handleEdit(appointment)}
-                              className="text-blue-600 hover:text-blue-900 mr-4"
-                            >
-                              Edit
-                            </button>
-                            <button
-                              onClick={() => handleDelete(appointment.id)}
-                              className="text-red-600 hover:text-red-900"
-                              disabled={deleteMutation.isPending}
-                            >
-                              Delete
-                            </button>
-                          </td>
-                        </tr>
-                      ))
+                      sortedAppointments.map((appointment) => {
+                        const status = getAppointmentStatus(appointment);
+                        return (
+                          <tr key={appointment.id} className="hover:bg-gray-50">
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                              {appointment.firstName} {appointment.lastName}
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                              {formatDateTime(appointment.startUtc)}
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                              {appointment.staff}
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              <span
+                                className={`px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(
+                                  status
+                                )}`}
+                              >
+                                {status}
+                              </span>
+                            </td>
+                            <td className="px-6 py-4 text-sm text-gray-900 max-w-xs truncate">
+                              {appointment.notes || "-"}
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                              <div className="flex justify-end gap-2">
+                                {status === "Open" && (
+                                  <button
+                                    onClick={() => handleCheckin(appointment.id)}
+                                    className="px-3 py-1 bg-green-600 text-white rounded hover:bg-green-700 text-xs"
+                                    disabled={checkinMutation.isPending}
+                                  >
+                                    Check In
+                                  </button>
+                                )}
+                                {status === "In Meeting" && (
+                                  <button
+                                    onClick={() => handleCheckout(appointment.id)}
+                                    className="px-3 py-1 bg-orange-600 text-white rounded hover:bg-orange-700 text-xs"
+                                    disabled={checkoutMutation.isPending}
+                                  >
+                                    Check Out
+                                  </button>
+                                )}
+                                <button
+                                  onClick={() => handleEdit(appointment)}
+                                  className="text-blue-600 hover:text-blue-900"
+                                >
+                                  Edit
+                                </button>
+                                <button
+                                  onClick={() => handleDelete(appointment.id)}
+                                  className="text-red-600 hover:text-red-900"
+                                  disabled={deleteMutation.isPending}
+                                >
+                                  Delete
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        );
+                      })
                     )}
                   </tbody>
                 </table>

@@ -118,6 +118,7 @@ export default function LoginPage() {
           <div className="mt-6 text-center text-sm text-gray-500">
             <p>Default credentials:</p>
             <p className="font-mono mt-1">admin@example.com / admin123</p>
+            <p className="font-mono mt-1">sysadmin@example.com / sysadmin123</p>
           </div>
         </div>
       </div>

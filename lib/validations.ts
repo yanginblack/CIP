@@ -48,3 +48,21 @@ export const adminAppointmentQuerySchema = z.object({
 });
 
 export type AdminAppointmentQuery = z.infer<typeof adminAppointmentQuerySchema>;
+
+// Staff schemas
+export const createStaffSchema = z.object({
+  name: z.string().trim().min(1, "Name is required").max(100, "Name too long"),
+  service: z.string().trim().min(1, "Service is required").max(100, "Service too long"),
+  googleCalendar: z.string().trim().max(200, "Google Calendar too long").optional(),
+});
+
+export type CreateStaffInput = z.infer<typeof createStaffSchema>;
+
+export const updateStaffSchema = z.object({
+  staffId: z.string().cuid(),
+  name: z.string().trim().min(1, "Name is required").max(100, "Name too long").optional(),
+  service: z.string().trim().min(1, "Service is required").max(100, "Service too long").optional(),
+  googleCalendar: z.string().trim().max(200, "Google Calendar too long").optional(),
+});
+
+export type UpdateStaffInput = z.infer<typeof updateStaffSchema>;

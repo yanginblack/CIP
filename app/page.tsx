@@ -10,18 +10,28 @@ import { AudioButton } from "@/components/AudioButton";
 import { MicrophoneIcon } from "@/components/icons";
 import { SUPPORTED_LANGUAGES, TRANSLATIONS } from "@/lib/languageConfig";
 
-type Appointment = {
-  id: string;
-  startUtc: string;
-  staff: string;
-  notes: string | null;
-};
+// Component imports
+import { WelcomeStep } from "@/components/checkin/WelcomeStep";
+import { AppointmentsList } from "@/components/checkin/AppointmentsList";
+import { DepartmentRouting } from "@/components/checkin/DepartmentRouting";
+import { AgentInteraction } from "@/components/checkin/AgentInteraction";
+import { ConfirmationStep } from "@/components/checkin/ConfirmationStep";
+import { HelpStep } from "@/components/checkin/HelpStep";
+import { PersistentNavigation } from "@/components/checkin/PersistentNavigation";
+import { ErrorMessage } from "@/components/shared/ErrorMessage";
+
+// Types
+import { Appointment, CheckInStep } from "@/components/checkin/types";
 
 export default function HomePage() {
+  const [currentStep, setCurrentStep] = useState<CheckInStep>('welcome');
   const [appointments, setAppointments] = useState<Appointment[]>([]);
-  const [isSearched, setIsSearched] = useState(false);
+  const [selectedAppointment, setSelectedAppointment] = useState<Appointment | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [userInfo, setUserInfo] = useState<{ firstName: string; lastName: string } | null>(null);
+  const [isSearched, setIsSearched] = useState(false);
+
   const { speak, stop, isSpeaking, isSupported } = useSpeech();
 
   const {
@@ -29,6 +39,7 @@ export default function HomePage() {
     handleSubmit,
     setValue,
     formState: { errors },
+    reset,
   } = useForm<NameSearchInput>({
     resolver: zodResolver(nameSearchSchema),
   });
@@ -55,6 +66,7 @@ export default function HomePage() {
   const performSearch = async (data: NameSearchInput, isVoiceCheckIn = false) => {
     setIsLoading(true);
     setError(null);
+    setUserInfo(data);
     setIsSearched(false);
 
     try {
@@ -76,6 +88,7 @@ export default function HomePage() {
       console.log("Search results:", results);
       setAppointments(results);
       setIsSearched(true);
+      setCurrentStep(results.length > 0 ? 'appointments' : 'help');
 
       // Auto-announce results for voice check-in
       if (isVoiceCheckIn) {
@@ -93,13 +106,39 @@ export default function HomePage() {
           speak(`Sorry, there was an error searching for appointments. Please try again or contact the front desk.`, langConfig.voiceLang);
         }, 500);
       }
+      setCurrentStep('help');
     } finally {
       setIsLoading(false);
     }
   };
 
-  const onSubmit = async (data: NameSearchInput) => {
-    await performSearch(data, false);
+  const handleAppointmentSelect = (appointment: Appointment) => {
+    setSelectedAppointment(appointment);
+    setCurrentStep('department-routing');
+  };
+
+  const handleCheckIn = async () => {
+    if (!selectedAppointment) return;
+
+    setIsLoading(true);
+    try {
+      await new Promise(resolve => setTimeout(resolve, 1500));
+      setCurrentStep('confirmation');
+    } catch (err: any) {
+      setError("Check-in failed. Please try again.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const resetFlow = () => {
+    setCurrentStep('welcome');
+    setAppointments([]);
+    setSelectedAppointment(null);
+    setError(null);
+    setUserInfo(null);
+    setIsSearched(false);
+    reset();
   };
 
   const formatDateTime = (dateString: string) => {
@@ -153,155 +192,108 @@ export default function HomePage() {
     };
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [isSearched, isSpeaking, appointments]);
+  }, [isSearched, isSpeaking, appointments, speak, stop]);
+
+  const getCurrentStepContent = () => {
+    switch (currentStep) {
+      case 'welcome':
+        return (
+          <WelcomeStep
+            isLoading={isLoading}
+            onSubmit={performSearch}
+            startCheckIn={startCheckIn}
+            isListening={isListening}
+            isCheckInSpeaking={isCheckInSpeaking}
+            isVoiceSupported={isVoiceSupported}
+            formRegister={register}
+            handleSubmit={handleSubmit}
+            formErrors={errors}
+            onStepChange={setCurrentStep}
+            onReset={resetFlow}
+          />
+        );
+      case 'appointments':
+        return (
+          <AppointmentsList
+            appointments={appointments}
+            userInfo={userInfo}
+            onAppointmentSelect={handleAppointmentSelect}
+            onStepChange={setCurrentStep}
+            formatDateTime={formatDateTime}
+            isSpeaking={isSpeaking}
+            onToggleAudio={isSpeaking ? stop : announceResults}
+            isAudioSupported={isSupported}
+            onReset={resetFlow}
+          />
+        );
+      case 'department-routing':
+        return selectedAppointment ? (
+          <DepartmentRouting
+            selectedAppointment={selectedAppointment}
+            isLoading={isLoading}
+            onCheckIn={handleCheckIn}
+            formatDateTime={formatDateTime}
+            onStepChange={setCurrentStep}
+            onReset={resetFlow}
+          />
+        ) : null;
+      case 'agent-interaction':
+        return <AgentInteraction />;
+      case 'confirmation':
+        return (
+          <ConfirmationStep
+            selectedAppointment={selectedAppointment}
+            onReset={resetFlow}
+            formatDateTime={formatDateTime}
+            onStepChange={setCurrentStep}
+          />
+        );
+      case 'help':
+        return (
+          <HelpStep
+            onAgentRequest={() => setCurrentStep('agent-interaction')}
+            onStepChange={setCurrentStep}
+            onReset={resetFlow}
+          />
+        );
+      default:
+        return (
+          <WelcomeStep
+            isLoading={isLoading}
+            onSubmit={performSearch}
+            startCheckIn={startCheckIn}
+            isListening={isListening}
+            isCheckInSpeaking={isCheckInSpeaking}
+            isVoiceSupported={isVoiceSupported}
+            formRegister={register}
+            handleSubmit={handleSubmit}
+            formErrors={errors}
+            onStepChange={setCurrentStep}
+            onReset={resetFlow}
+          />
+        );
+    }
+  };
 
   return (
-    <main className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100 py-12 px-4">
-      <div className="max-w-4xl mx-auto">
-        <div className="bg-white rounded-lg shadow-lg p-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-6">
-            Find Your Appointments
-          </h1>
-
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 mb-8">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label
-                  htmlFor="firstName"
-                  className="block text-sm font-medium text-gray-700 mb-1"
-                >
-                  First Name
-                </label>
-                <input
-                  id="firstName"
-                  type="text"
-                  {...register("firstName")}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 bg-white"
-                  placeholder="Enter first name"
-                />
-                {errors.firstName && (
-                  <p className="mt-1 text-sm text-red-600">
-                    {errors.firstName.message}
-                  </p>
-                )}
-              </div>
-
-              <div>
-                <label
-                  htmlFor="lastName"
-                  className="block text-sm font-medium text-gray-700 mb-1"
-                >
-                  Last Name
-                </label>
-                <input
-                  id="lastName"
-                  type="text"
-                  {...register("lastName")}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 bg-white"
-                  placeholder="Enter last name"
-                />
-                {errors.lastName && (
-                  <p className="mt-1 text-sm text-red-600">
-                    {errors.lastName.message}
-                  </p>
-                )}
-              </div>
-            </div>
-
-            <div className="flex gap-3">
-              {isVoiceSupported && (
-                <button
-                  type="button"
-                  onClick={startCheckIn}
-                  disabled={isListening || isSpeaking}
-                  className={`flex items-center justify-center gap-2 px-6 py-2 rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 transition-colors ${
-                    isListening
-                      ? "bg-red-600 hover:bg-red-700 focus:ring-red-500 animate-pulse"
-                      : "bg-green-600 hover:bg-green-700 focus:ring-green-500"
-                  } text-white disabled:opacity-50 disabled:cursor-not-allowed`}
-                  aria-label="Audio check-in"
-                >
-                  <MicrophoneIcon />
-                  <span>{isListening ? "Listening..." : "Audio Check-in"}</span>
-                </button>
-              )}
-              <button
-                type="submit"
-                disabled={isLoading}
-                className="flex-1 bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-              >
-                {isLoading ? "Searching..." : "Search Appointments"}
-              </button>
-            </div>
-          </form>
-
+    <main className="min-h-screen bg-gradient-to-br from-purple-100 via-white to-blue-100 py-8 px-4">
+      <div className="max-w-2xl mx-auto">
+        <div className="bg-white rounded-2xl shadow-xl p-8 min-h-[600px] flex flex-col justify-center">
           {error && (
-            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded mb-4">
-              {error}
-            </div>
+            <ErrorMessage
+              error={error}
+              onDismiss={() => setError(null)}
+            />
           )}
 
-          {isSearched && (
-            <div>
-              <div className="flex justify-between items-center mb-4">
-                <h2 className="text-xl font-semibold text-gray-900">
-                  {appointments.length > 0
-                    ? `Found ${appointments.length} appointment${
-                        appointments.length === 1 ? "" : "s"
-                      }`
-                    : "No upcoming appointments found"}
-                </h2>
-                <AudioButton
-                  isSpeaking={isSpeaking}
-                  onToggle={isSpeaking ? stop : announceResults}
-                  isSupported={isSupported}
-                />
-              </div>
-
-              {appointments.length > 0 ? (
-                <div className="overflow-x-auto">
-                  <table className="min-w-full divide-y divide-gray-200">
-                    <thead className="bg-gray-50">
-                      <tr>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Time
-                        </th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Staff
-                        </th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Notes
-                        </th>
-                      </tr>
-                    </thead>
-                    <tbody className="bg-white divide-y divide-gray-200">
-                      {appointments.map((appointment) => (
-                        <tr key={appointment.id} className="hover:bg-gray-50">
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                            {formatDateTime(appointment.startUtc)}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                            {appointment.staff}
-                          </td>
-                          <td className="px-6 py-4 text-sm text-gray-900">
-                            {appointment.notes || "-"}
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              ) : (
-                <div className="text-center py-8 text-gray-500">
-                  <p>No appointments found for this name.</p>
-                  <p className="text-sm mt-2">
-                    Please check the spelling and try again.
-                  </p>
-                </div>
-              )}
-            </div>
-          )}
+          {getCurrentStepContent()}
         </div>
+
+        <PersistentNavigation
+          currentStep={currentStep}
+          onReset={resetFlow}
+          onAgentRequest={() => setCurrentStep('agent-interaction')}
+        />
       </div>
     </main>
   );

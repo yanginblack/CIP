@@ -8,7 +8,7 @@ async function main() {
   const adminPasswordHash =
     process.env.ADMIN_PASSWORD_HASH || bcrypt.hashSync("admin123", 10);
 
-  // Check if admin user already exists
+  // Create or update normal admin user
   const existingAdmin = await prisma.adminUser.findUnique({
     where: { email: adminEmail },
   });
@@ -18,6 +18,7 @@ async function main() {
       data: {
         email: adminEmail,
         password: adminPasswordHash,
+        role: "ADMIN",
       },
     });
     console.log(`Created admin user: ${admin.email}`);
@@ -25,29 +26,117 @@ async function main() {
     console.log(`Admin user already exists: ${existingAdmin.email}`);
   }
 
-  // Create some sample appointments for testing
-  const now = new Date();
+  // Create system admin user
+  const sysAdminEmail = "sysadmin@example.com";
+  const sysAdminPasswordHash = bcrypt.hashSync("sysadmin123", 10);
+
+  const existingSysAdmin = await prisma.adminUser.findUnique({
+    where: { email: sysAdminEmail },
+  });
+
+  if (!existingSysAdmin) {
+    const sysAdmin = await prisma.adminUser.create({
+      data: {
+        email: sysAdminEmail,
+        password: sysAdminPasswordHash,
+        role: "SYSTEM_ADMIN",
+      },
+    });
+    console.log(`Created system admin user: ${sysAdmin.email}`);
+  } else {
+    console.log(`System admin user already exists: ${existingSysAdmin.email}`);
+  }
+
+  // Delete existing appointments
+  await prisma.appointment.deleteMany({});
+  console.log("Cleared existing appointments");
+
+  // Create sample appointments with varied dates
   const sampleAppointments = [
+    // 3 appointments BEFORE Nov 8th
     {
-      firstName: "John",
-      lastName: "Doe",
-      startUtc: new Date(now.getTime() + 24 * 60 * 60 * 1000), // Tomorrow
+      firstName: "Alice",
+      lastName: "Johnson",
+      startUtc: new Date("2025-11-05T09:00:00Z"),
       staff: "Dr. Smith",
+      notes: "Annual checkup",
+    },
+    {
+      firstName: "Bob",
+      lastName: "Williams",
+      startUtc: new Date("2025-11-06T14:30:00Z"),
+      staff: "Dr. Johnson",
+      notes: "Follow-up consultation",
+    },
+    {
+      firstName: "Carol",
+      lastName: "Davis",
+      startUtc: new Date("2025-11-07T11:00:00Z"),
+      staff: "Dr. Williams",
+      notes: "Initial assessment",
+    },
+
+    // 3 appointments ON Nov 8th
+    {
+      firstName: "David",
+      lastName: "Miller",
+      startUtc: new Date("2025-11-08T08:00:00Z"),
+      checkinTime: new Date("2025-11-08T08:00:00Z"),
+      checkoutTime: new Date("2025-11-08T08:30:00Z"),
+      staff: "Dr. Smith",
+      notes: "Morning consultation",
+    },
+    {
+      firstName: "Emma",
+      lastName: "Wilson",
+      startUtc: new Date("2025-11-08T13:00:00Z"),
+      checkinTime: new Date("2025-11-08T13:00:00Z"),
+      staff: "Dr. Johnson",
+      notes: "Afternoon checkup",
+    },
+    {
+      firstName: "Frank",
+      lastName: "Moore",
+      startUtc: new Date("2025-11-08T16:30:00Z"),
+      staff: "Dr. Williams",
+      notes: "Evening appointment",
+    },
+
+    // 5 appointments AFTER Nov 8th
+    {
+      firstName: "Grace",
+      lastName: "Taylor",
+      startUtc: new Date("2025-11-09T10:00:00Z"),
+      staff: "Dr. Smith",
+      notes: "Regular checkup",
+    },
+    {
+      firstName: "Henry",
+      lastName: "Anderson",
+      startUtc: new Date("2025-11-10T15:00:00Z"),
+      staff: "Dr. Johnson",
+      notes: "Follow-up visit",
+    },
+    {
+      firstName: "Iris",
+      lastName: "Thomas",
+      startUtc: new Date("2025-11-11T09:30:00Z"),
+      staff: "Dr. Williams",
       notes: "Initial consultation",
     },
     {
-      firstName: "Jane",
-      lastName: "Smith",
-      startUtc: new Date(now.getTime() + 48 * 60 * 60 * 1000), // Day after tomorrow
-      staff: "Dr. Johnson",
-      notes: "Follow-up appointment",
+      firstName: "Jack",
+      lastName: "Jackson",
+      startUtc: new Date("2025-11-12T14:00:00Z"),
+      staff: "Dr. Smith",
+      notes: "Treatment review",
     },
     {
-      firstName: "John",
-      lastName: "Doe",
-      startUtc: new Date(now.getTime() + 72 * 60 * 60 * 1000), // 3 days from now
-      staff: "Dr. Williams",
-      notes: "Regular checkup",
+      firstName: "Kelly",
+      lastName: "White",
+      startUtc: new Date("2025-11-13T11:30:00Z"),
+      staff: "Dr. Johnson",
+      notes: "Annual physical",
     },
   ];
 
@@ -58,6 +147,47 @@ async function main() {
   }
 
   console.log(`Created ${sampleAppointments.length} sample appointments`);
+
+  // Delete existing staff
+  await prisma.staff.deleteMany({});
+  console.log("Cleared existing staff");
+
+  // Create sample staff
+  const sampleStaff = [
+    {
+      name: "Dr. Smith",
+      service: "General Practice",
+      googleCalendar: "dr.smith@clinic.com",
+    },
+    {
+      name: "Dr. Johnson",
+      service: "Pediatrics",
+      googleCalendar: "dr.johnson@clinic.com",
+    },
+    {
+      name: "Dr. Williams",
+      service: "Cardiology",
+      googleCalendar: "dr.williams@clinic.com",
+    },
+    {
+      name: "Dr. Brown",
+      service: "Dermatology",
+      googleCalendar: "dr.brown@clinic.com",
+    },
+    {
+      name: "Dr. Davis",
+      service: "Orthopedics",
+      googleCalendar: "dr.davis@clinic.com",
+    },
+  ];
+
+  for (const staff of sampleStaff) {
+    await prisma.staff.create({
+      data: staff,
+    });
+  }
+
+  console.log(`Created ${sampleStaff.length} sample staff members`);
 }
 
 main()
