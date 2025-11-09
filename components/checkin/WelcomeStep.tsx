@@ -1,6 +1,7 @@
 import { MicrophoneIcon } from "@/components/icons";
 import { useEffect, useState } from "react";
 import { WelcomeStepProps } from "./types";
+import { VoiceAssistant } from "./VoiceAssistant";
 
 export function WelcomeStep({
   isLoading,
@@ -17,6 +18,7 @@ export function WelcomeStep({
   const [showCancelButton, setShowCancelButton] = useState(false);
   const [showListeningText, setShowListeningText] = useState(false);
   const [disableButton, setDisableButton] = useState(false);
+  const [showVoiceAssistant, setShowVoiceAssistant] = useState(false);
   // Handle cancel button visibility with 2-second delay
   useEffect(() => {
     let timeoutId: NodeJS.Timeout;
@@ -185,19 +187,14 @@ export function WelcomeStep({
             {isLoading ? "Searching..." : "Check In Now"}
           </button>
 
-          {isVoiceSupported && startCheckIn && (
+          {isVoiceSupported && (
             <button
               type="button"
-              onClick={startCheckIn}
-              disabled={disableButton}
-              className={`flex items-center justify-center gap-3 px-8 py-6 rounded-xl transition-all duration-200 font-bold text-xl shadow-lg hover:shadow-xl ${
-                disableButton
-                  ? "bg-amber/70 cursor-not-allowed opacity-75 animate-pulse text-white"
-                  : "bg-amber hover:bg-yellow-600 text-white"
-              }`}
+              onClick={() => setShowVoiceAssistant(true)}
+              className="flex items-center justify-center gap-3 px-8 py-6 rounded-xl transition-all duration-200 font-bold text-xl shadow-lg hover:shadow-xl bg-amber hover:bg-yellow-600 text-white"
             >
               <MicrophoneIcon />
-              <span>{showListeningText ? "Listening..." : "Voice"}</span>
+              <span>AI Reference</span>
             </button>
           )}
 
@@ -214,6 +211,11 @@ export function WelcomeStep({
           )}
         </div>
       </form>
+
+      {/* Voice Assistant Modal */}
+      {showVoiceAssistant && (
+        <VoiceAssistant onClose={() => setShowVoiceAssistant(false)} />
+      )}
     </div>
   );
 }
