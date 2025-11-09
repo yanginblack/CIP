@@ -9,6 +9,7 @@ import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 
 // Component imports
+import { AccessibilityControls } from "@/components/AccessibilityControls";
 import { AgentInteraction } from "@/components/checkin/AgentInteraction";
 import { AppointmentsList } from "@/components/checkin/AppointmentsList";
 import { ConfirmationStep } from "@/components/checkin/ConfirmationStep";
@@ -304,9 +305,9 @@ export default function HomePage() {
   };
 
   return (
-    <main className="min-h-screen bg-gradient-to-br from-purple-100 via-white to-blue-100 py-8 px-4">
+    <main className="min-h-screen bg-gradient-to-br from-purple-100 via-white to-blue-100 dark:from-purple-900 dark:via-gray-900 dark:to-blue-900 py-8 px-4 pb-24">
       <div className="max-w-2xl mx-auto">
-        <div className="bg-white rounded-2xl shadow-xl p-8 min-h-[600px] flex flex-col justify-center">
+        <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-8 min-h-[600px] flex flex-col justify-center">
           {error && (
             <ErrorMessage error={error} onDismiss={() => setError(null)} />
           )}
@@ -320,6 +321,8 @@ export default function HomePage() {
           onAgentRequest={() => setCurrentStep("agent-interaction")}
         />
       </div>
+
+      <AccessibilityControls />
     </main>
   );
 }

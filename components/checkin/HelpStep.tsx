@@ -36,9 +36,9 @@ export function HelpStep({
 
       <button
         onClick={onAgentRequest}
-        className="w-full bg-yellow-600 text-white py-4 px-8 text-lg rounded-lg hover:bg-yellow-700 transition-colors"
+        className="w-full bg-purple-600 text-white py-4 px-8 text-lg rounded-lg hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500 transition-all duration-200 shadow-md hover:shadow-lg font-semibold"
       >
-        Call for Help
+        Call for Staff
       </button>
     </div>
   );
