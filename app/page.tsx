@@ -6,10 +6,13 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { nameSearchSchema, type NameSearchInput } from "@/lib/validations";
 import { useSpeech } from "@/hooks/useSpeech";
 import { useAudioCheckIn } from "@/hooks/useAudioCheckIn";
-import { SUPPORTED_LANGUAGES, TRANSLATIONS } from "@/lib/languageConfig";
+import { SUPPORTED_LANGUAGES, TRANSLATIONS, SupportedLanguage } from "@/lib/languageConfig";
+import { ThemeToggle } from "@/components/ThemeToggle";
 
 // Component imports
-import { WelcomeStep } from "@/components/checkin/WelcomeStep";
+import { LanguageSelection } from "@/components/checkin/LanguageSelection";
+import { ContactInfoStep } from "@/components/checkin/ContactInfoStep";
+import { VisitorAssistance } from "@/components/checkin/VisitorAssistance";
 import { AppointmentsList } from "@/components/checkin/AppointmentsList";
 import { DepartmentRouting } from "@/components/checkin/DepartmentRouting";
 import { AgentInteraction } from "@/components/checkin/AgentInteraction";
@@ -22,7 +25,8 @@ import { ErrorMessage } from "@/components/shared/ErrorMessage";
 import { Appointment, CheckInStep } from "@/components/checkin/types";
 
 export default function HomePage() {
-  const [currentStep, setCurrentStep] = useState<CheckInStep>('welcome');
+  const [currentStep, setCurrentStep] = useState<CheckInStep>('language-selection');
+  const [selectedLanguage, setSelectedLanguage] = useState<SupportedLanguage>('en');
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [selectedAppointment, setSelectedAppointment] = useState<Appointment | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -48,7 +52,6 @@ export default function HomePage() {
     isListening,
     isSpeaking: isCheckInSpeaking,
     isVoiceSupported,
-    selectedLanguage,
   } = useAudioCheckIn({
     onNameConfirmed: (name) => {
       setValue("firstName", name.firstName);
@@ -60,6 +63,20 @@ export default function HomePage() {
       setValue("lastName", "");
     },
   });
+
+  const handleLanguageSelected = (language: SupportedLanguage) => {
+    setSelectedLanguage(language);
+    if (language === 'en' && currentStep === 'language-selection') {
+      // Check if this was clicked from Visitor button
+      setCurrentStep('contact-info');
+    } else {
+      setCurrentStep('contact-info');
+    }
+  };
+
+  const handleVisitorClick = () => {
+    setCurrentStep('visitor-assistance');
+  };
 
   const performSearch = async (data: NameSearchInput, isVoiceCheckIn: boolean = false) => {
     setIsLoading(true);
@@ -130,7 +147,8 @@ export default function HomePage() {
   };
 
   const resetFlow = () => {
-    setCurrentStep('welcome');
+    setCurrentStep('language-selection');
+    setSelectedLanguage('en');
     setAppointments([]);
     setSelectedAppointment(null);
     setError(null);
@@ -141,7 +159,7 @@ export default function HomePage() {
 
   const formatDateTime = (dateString: string) => {
     const date = new Date(dateString);
-    return new Intl.DateTimeFormat("en-US", {
+    return new Intl.DateTimeFormat(selectedLanguage === 'en' ? "en-US" : selectedLanguage === 'es' ? "es-ES" : "zh-CN", {
       dateStyle: "medium",
       timeStyle: "short",
     }).format(date);
@@ -194,22 +212,43 @@ export default function HomePage() {
 
   const getCurrentStepContent = () => {
     switch (currentStep) {
-      case 'welcome':
+      case 'language-selection':
         return (
-          <WelcomeStep
-            isLoading={isLoading}
-            onSubmit={performSearch}
+          <LanguageSelection
+            onLanguageSelected={handleLanguageSelected}
+            onVisitorClick={handleVisitorClick}
             startCheckIn={startCheckIn}
             isListening={isListening}
             isCheckInSpeaking={isCheckInSpeaking}
             isVoiceSupported={isVoiceSupported}
+          />
+        );
+
+      case 'contact-info':
+        return (
+          <ContactInfoStep
+            language={selectedLanguage}
+            isLoading={isLoading}
+            onSubmit={performSearch}
             formRegister={register}
             handleSubmit={handleSubmit}
             formErrors={errors}
-            onStepChange={setCurrentStep}
-            onReset={resetFlow}
+            onBack={() => setCurrentStep('language-selection')}
+            startCheckIn={startCheckIn}
+            isListening={isListening}
+            isCheckInSpeaking={isCheckInSpeaking}
+            isVoiceSupported={isVoiceSupported}
           />
         );
+
+      case 'visitor-assistance':
+        return (
+          <VisitorAssistance
+            language={selectedLanguage}
+            onBack={() => setCurrentStep('language-selection')}
+          />
+        );
+
       case 'appointments':
         return (
           <AppointmentsList
@@ -224,6 +263,7 @@ export default function HomePage() {
             onReset={resetFlow}
           />
         );
+
       case 'department-routing':
         return selectedAppointment ? (
           <DepartmentRouting
@@ -235,8 +275,10 @@ export default function HomePage() {
             onReset={resetFlow}
           />
         ) : null;
+
       case 'agent-interaction':
         return <AgentInteraction />;
+
       case 'confirmation':
         return (
           <ConfirmationStep
@@ -246,6 +288,7 @@ export default function HomePage() {
             onStepChange={setCurrentStep}
           />
         );
+
       case 'help':
         return (
           <HelpStep
@@ -257,29 +300,33 @@ export default function HomePage() {
             isAudioSupported={isSupported}
           />
         );
+
       default:
         return (
-          <WelcomeStep
-            isLoading={isLoading}
-            onSubmit={performSearch}
+          <LanguageSelection
+            onLanguageSelected={handleLanguageSelected}
+            onVisitorClick={handleVisitorClick}
             startCheckIn={startCheckIn}
             isListening={isListening}
             isCheckInSpeaking={isCheckInSpeaking}
             isVoiceSupported={isVoiceSupported}
-            formRegister={register}
-            handleSubmit={handleSubmit}
-            formErrors={errors}
-            onStepChange={setCurrentStep}
-            onReset={resetFlow}
           />
         );
     }
   };
 
   return (
-    <main className="min-h-screen bg-gradient-to-br from-purple-100 via-white to-blue-100 py-8 px-4">
-      <div className="max-w-2xl mx-auto">
-        <div className="bg-white rounded-2xl shadow-xl p-8 min-h-[600px] flex flex-col justify-center">
+    <main className="min-h-screen py-8 px-4">
+      <ThemeToggle />
+
+      <div className="max-w-4xl mx-auto">
+        <div
+          className="rounded-2xl shadow-xl p-8 min-h-[600px] flex flex-col justify-center"
+          style={{
+            background: "var(--container-bg)",
+            boxShadow: "0 8px 32px var(--shadow-medium)"
+          }}
+        >
           {error && (
             <ErrorMessage
               error={error}
@@ -290,11 +337,13 @@ export default function HomePage() {
           {getCurrentStepContent()}
         </div>
 
-        <PersistentNavigation
-          currentStep={currentStep}
-          onReset={resetFlow}
-          onAgentRequest={() => setCurrentStep('agent-interaction')}
-        />
+        {currentStep !== 'language-selection' && currentStep !== 'visitor-assistance' && (
+          <PersistentNavigation
+            currentStep={currentStep}
+            onReset={resetFlow}
+            onAgentRequest={() => setCurrentStep('agent-interaction')}
+          />
+        )}
       </div>
     </main>
   );

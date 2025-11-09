@@ -102,39 +102,39 @@ async function main() {
       notes: "Evening appointment",
     },
 
-    // 5 appointments AFTER Nov 8th
+    // 5 appointments in the FUTURE (using dynamic dates)
     {
       firstName: "Grace",
       lastName: "Taylor",
-      startUtc: new Date("2025-11-09T10:00:00Z"),
+      startUtc: new Date(Date.now() + 2 * 60 * 60 * 1000), // 2 hours from now
       staff: "Dr. Smith",
       notes: "Regular checkup",
     },
     {
       firstName: "Henry",
       lastName: "Anderson",
-      startUtc: new Date("2025-11-10T15:00:00Z"),
+      startUtc: new Date(Date.now() + 24 * 60 * 60 * 1000), // 1 day from now
       staff: "Dr. Johnson",
       notes: "Follow-up visit",
     },
     {
       firstName: "Iris",
       lastName: "Thomas",
-      startUtc: new Date("2025-11-11T09:30:00Z"),
+      startUtc: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000), // 2 days from now
       staff: "Dr. Williams",
       notes: "Initial consultation",
     },
     {
       firstName: "Jack",
       lastName: "Jackson",
-      startUtc: new Date("2025-11-12T14:00:00Z"),
+      startUtc: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000), // 3 days from now
       staff: "Dr. Smith",
       notes: "Treatment review",
     },
     {
       firstName: "Kelly",
       lastName: "White",
-      startUtc: new Date("2025-11-13T11:30:00Z"),
+      startUtc: new Date(Date.now() + 4 * 24 * 60 * 60 * 1000), // 4 days from now
       staff: "Dr. Johnson",
       notes: "Annual physical",
     },

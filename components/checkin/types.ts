@@ -9,6 +9,9 @@ export type Appointment = {
 
 export type CheckInStep =
   | 'welcome'
+  | 'language-selection'
+  | 'contact-info'
+  | 'visitor-assistance'
   | 'search'
   | 'appointments'
   | 'department-routing'
