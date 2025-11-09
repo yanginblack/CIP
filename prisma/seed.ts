@@ -76,28 +76,28 @@ async function main() {
       notes: "Initial assessment",
     },
 
-    // 3 appointments ON Nov 8th
+    // 3 appointments ON Nov 9th
     {
       firstName: "David",
       lastName: "Miller",
-      startUtc: new Date("2025-11-08T08:00:00Z"),
-      checkinTime: new Date("2025-11-08T08:00:00Z"),
-      checkoutTime: new Date("2025-11-08T08:30:00Z"),
+      startUtc: new Date("2025-11-09T08:00:00Z"),
+      checkinTime: new Date("2025-11-09T08:00:00Z"),
+      checkoutTime: new Date("2025-11-09T08:30:00Z"),
       staff: "Dr. Smith",
       notes: "Morning consultation",
     },
     {
       firstName: "Emma",
       lastName: "Wilson",
-      startUtc: new Date("2025-11-08T13:00:00Z"),
-      checkinTime: new Date("2025-11-08T13:00:00Z"),
+      startUtc: new Date("2025-11-09T13:00:00Z"),
+      checkinTime: new Date("2025-11-09T13:00:00Z"),
       staff: "Dr. Johnson",
       notes: "Afternoon checkup",
     },
     {
       firstName: "Frank",
       lastName: "Moore",
-      startUtc: new Date("2025-11-08T16:30:00Z"),
+      startUtc: new Date("2025-11-09T16:30:00Z"),
       staff: "Dr. Williams",
       notes: "Evening appointment",
     },
