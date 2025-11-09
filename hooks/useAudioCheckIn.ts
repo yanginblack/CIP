@@ -17,11 +17,12 @@ import {
 interface UseAudioCheckInOptions {
   onNameConfirmed: (name: { firstName: string; lastName: string }) => void;
   onReset?: () => void;
+  onComplete?: () => void; // Called when audio check-in process completes
 }
 
 type CheckInState = "language_selection" | "name_input" | "name_confirmation";
 
-export function useAudioCheckIn({ onNameConfirmed, onReset }: UseAudioCheckInOptions) {
+export function useAudioCheckIn({ onNameConfirmed, onReset, onComplete }: UseAudioCheckInOptions) {
   const [selectedLanguage, setSelectedLanguage] = useState<SupportedLanguage>("en");
   const [checkInState, setCheckInState] = useState<CheckInState>("language_selection");
   const [capturedName, setCapturedName] = useState<{
@@ -176,6 +177,13 @@ export function useAudioCheckIn({ onNameConfirmed, onReset }: UseAudioCheckInOpt
         resetTranscript();
         setTimeout(() => {
           onNameConfirmed(capturedName);
+          // Wait for search to complete before calling onComplete
+          // The search will trigger announceResultsForCheckIn which takes ~3-4 seconds
+          setTimeout(() => {
+            if (onComplete) {
+              onComplete();
+            }
+          }, 5000); // 5 seconds to allow for search + audio announcement
         }, 1500);
       } else if (isNegativeConfirmation(lowerTranscript, selectedLanguage)) {
         // User said no, restart name input

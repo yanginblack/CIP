@@ -1,29 +1,32 @@
 "use client";
 
-import { useAudioCheckIn } from "@/hooks/useAudioCheckIn";
-import { useSpeech } from "@/hooks/useSpeech";
-import { SUPPORTED_LANGUAGES, TRANSLATIONS } from "@/lib/languageConfig";
-import { nameSearchSchema, type NameSearchInput } from "@/lib/validations";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { useEffect, useState } from "react";
+import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { nameSearchSchema, type NameSearchInput } from "@/lib/validations";
+import { useSpeech } from "@/hooks/useSpeech";
+import { useAudioCheckIn } from "@/hooks/useAudioCheckIn";
+import { SUPPORTED_LANGUAGES, TRANSLATIONS, SupportedLanguage } from "@/lib/languageConfig";
+import { ThemeToggle } from "@/components/ThemeToggle";
 
 // Component imports
-import { AccessibilityControls } from "@/components/AccessibilityControls";
-import { AgentInteraction } from "@/components/checkin/AgentInteraction";
+import { LanguageSelection } from "@/components/checkin/LanguageSelection";
+import { ContactInfoStep } from "@/components/checkin/ContactInfoStep";
+import { VisitorAssistance } from "@/components/checkin/VisitorAssistance";
 import { AppointmentsList } from "@/components/checkin/AppointmentsList";
-import { ConfirmationStep } from "@/components/checkin/ConfirmationStep";
 import { DepartmentRouting } from "@/components/checkin/DepartmentRouting";
+import { AgentInteraction } from "@/components/checkin/AgentInteraction";
+import { ConfirmationStep } from "@/components/checkin/ConfirmationStep";
 import { HelpStep } from "@/components/checkin/HelpStep";
 import { PersistentNavigation } from "@/components/checkin/PersistentNavigation";
-import { WelcomeStep } from "@/components/checkin/WelcomeStep";
 import { ErrorMessage } from "@/components/shared/ErrorMessage";
 
 // Types
 import { Appointment, CheckInStep } from "@/components/checkin/types";
 
 export default function HomePage() {
-  const [currentStep, setCurrentStep] = useState<CheckInStep>("welcome");
+  const [currentStep, setCurrentStep] = useState<CheckInStep>('language-selection');
+  const [selectedLanguage, setSelectedLanguage] = useState<SupportedLanguage>('en');
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [selectedAppointment, setSelectedAppointment] =
     useState<Appointment | null>(null);
@@ -50,11 +53,9 @@ export default function HomePage() {
   // Audio check-in hook
   const {
     startCheckIn,
-    cancelCheckIn,
     isListening,
     isSpeaking: isCheckInSpeaking,
     isVoiceSupported,
-    selectedLanguage,
   } = useAudioCheckIn({
     onNameConfirmed: (name) => {
       setValue("firstName", name.firstName);
@@ -65,12 +66,28 @@ export default function HomePage() {
       setValue("firstName", "");
       setValue("lastName", "");
     },
+    onComplete: () => {
+      // After audio check-in completes, reset to language selection screen
+      console.log("[HomePage] Audio check-in completed, resetting to language selection");
+      resetFlow();
+    },
   });
 
-  const performSearch = async (
-    data: NameSearchInput,
-    isVoiceCheckIn: boolean = false
-  ) => {
+  const handleLanguageSelected = (language: SupportedLanguage) => {
+    setSelectedLanguage(language);
+    if (language === 'en' && currentStep === 'language-selection') {
+      // Check if this was clicked from Visitor button
+      setCurrentStep('contact-info');
+    } else {
+      setCurrentStep('contact-info');
+    }
+  };
+
+  const handleVisitorClick = () => {
+    setCurrentStep('visitor-assistance');
+  };
+
+  const performSearch = async (data: NameSearchInput, isVoiceCheckIn: boolean = false) => {
     setIsLoading(true);
     setError(null);
     setUserInfo(data);
@@ -142,7 +159,8 @@ export default function HomePage() {
   };
 
   const resetFlow = () => {
-    setCurrentStep("welcome");
+    setCurrentStep('language-selection');
+    setSelectedLanguage('en');
     setAppointments([]);
     setSelectedAppointment(null);
     setError(null);
@@ -153,7 +171,7 @@ export default function HomePage() {
 
   const formatDateTime = (dateString: string) => {
     const date = new Date(dateString);
-    return new Intl.DateTimeFormat("en-US", {
+    return new Intl.DateTimeFormat(selectedLanguage === 'en' ? "en-US" : selectedLanguage === 'es' ? "es-ES" : "zh-CN", {
       dateStyle: "medium",
       timeStyle: "short",
     }).format(date);
@@ -220,24 +238,44 @@ export default function HomePage() {
 
   const getCurrentStepContent = () => {
     switch (currentStep) {
-      case "welcome":
+      case 'language-selection':
         return (
-          <WelcomeStep
-            isLoading={isLoading}
-            onSubmit={performSearch}
+          <LanguageSelection
+            onLanguageSelected={handleLanguageSelected}
+            onVisitorClick={handleVisitorClick}
             startCheckIn={startCheckIn}
-            cancelCheckIn={cancelCheckIn}
             isListening={isListening}
             isCheckInSpeaking={isCheckInSpeaking}
             isVoiceSupported={isVoiceSupported}
+          />
+        );
+
+      case 'contact-info':
+        return (
+          <ContactInfoStep
+            language={selectedLanguage}
+            isLoading={isLoading}
+            onSubmit={performSearch}
             formRegister={register}
             handleSubmit={handleSubmit}
             formErrors={errors}
-            onStepChange={setCurrentStep}
-            onReset={resetFlow}
+            onBack={() => setCurrentStep('language-selection')}
+            startCheckIn={startCheckIn}
+            isListening={isListening}
+            isCheckInSpeaking={isCheckInSpeaking}
+            isVoiceSupported={isVoiceSupported}
           />
         );
-      case "appointments":
+
+      case 'visitor-assistance':
+        return (
+          <VisitorAssistance
+            language={selectedLanguage}
+            onBack={() => setCurrentStep('language-selection')}
+          />
+        );
+
+      case 'appointments':
         return (
           <AppointmentsList
             appointments={appointments}
@@ -251,7 +289,8 @@ export default function HomePage() {
             onReset={resetFlow}
           />
         );
-      case "department-routing":
+
+      case 'department-routing':
         return selectedAppointment ? (
           <DepartmentRouting
             selectedAppointment={selectedAppointment}
@@ -262,9 +301,11 @@ export default function HomePage() {
             onReset={resetFlow}
           />
         ) : null;
-      case "agent-interaction":
+
+      case 'agent-interaction':
         return <AgentInteraction />;
-      case "confirmation":
+
+      case 'confirmation':
         return (
           <ConfirmationStep
             selectedAppointment={selectedAppointment}
@@ -273,7 +314,8 @@ export default function HomePage() {
             onStepChange={setCurrentStep}
           />
         );
-      case "help":
+
+      case 'help':
         return (
           <HelpStep
             onAgentRequest={() => setCurrentStep("agent-interaction")}
@@ -284,36 +326,32 @@ export default function HomePage() {
             isAudioSupported={isSupported}
           />
         );
+
       default:
         return (
-          <WelcomeStep
-            isLoading={isLoading}
-            onSubmit={performSearch}
+          <LanguageSelection
+            onLanguageSelected={handleLanguageSelected}
+            onVisitorClick={handleVisitorClick}
             startCheckIn={startCheckIn}
-            cancelCheckIn={cancelCheckIn}
             isListening={isListening}
             isCheckInSpeaking={isCheckInSpeaking}
             isVoiceSupported={isVoiceSupported}
-            formRegister={register}
-            handleSubmit={handleSubmit}
-            formErrors={errors}
-            onStepChange={setCurrentStep}
-            onReset={resetFlow}
           />
         );
     }
   };
 
   return (
-    <main
-      className="min-h-screen bg-gradient-to-br from-purple-100 via-white to-blue-100 dark:from-navy-dark dark:via-purple-dark dark:to-navy-dark py-8 px-4 pb-24"
-      aria-label="Check-in kiosk"
-    >
-      <div className="max-w-2xl mx-auto">
+    <main className="min-h-screen py-8 px-4">
+      <ThemeToggle />
+
+      <div className="max-w-4xl mx-auto">
         <div
-          className="bg-white dark:bg-purple-dark rounded-2xl shadow-xl p-8 min-h-[600px] flex flex-col justify-center"
-          role="region"
-          aria-label="Main check-in content"
+          className="rounded-2xl shadow-xl p-8 min-h-[600px] flex flex-col justify-center"
+          style={{
+            background: "var(--container-bg)",
+            boxShadow: "0 8px 32px var(--shadow-medium)"
+          }}
         >
           {error && (
             <ErrorMessage error={error} onDismiss={() => setError(null)} />
@@ -322,16 +360,15 @@ export default function HomePage() {
           {getCurrentStepContent()}
         </div>
 
-        {currentStep !== "agent-interaction" && (
+        {currentStep !== 'language-selection' && currentStep !== 'visitor-assistance' && (
           <PersistentNavigation
             currentStep={currentStep}
             onReset={resetFlow}
-            onAgentRequest={() => setCurrentStep("agent-interaction")}
+            onAgentRequest={() => setCurrentStep('agent-interaction')}
           />
         )}
       </div>
 
-      <AccessibilityControls />
     </main>
   );
 }

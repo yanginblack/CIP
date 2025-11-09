@@ -145,7 +145,7 @@ export function AssistantSection() {
         Online Assistant
       </h3>
       <p className="text-sm text-blue-700 mb-4">
-        While you're waiting for assistance from our front desk, or if our front
+        While you&apos;re waiting for assistance from our front desk, or if our front
         desk is currently occupied, you can also talk to our online assistant.
       </p>
 

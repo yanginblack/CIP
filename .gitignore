@@ -86,3 +86,6 @@ logs
 # Backup files
 *.bak
 *.backup
+
+# Frontend design documentation
+/fe_design
