@@ -1,5 +1,10 @@
 "use client";
 
+import { useState, useEffect } from "react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { nameSearchSchema, type NameSearchInput } from "@/lib/validations";
+import { useSpeech } from "@/hooks/useSpeech";
 import { useAudioCheckIn } from "@/hooks/useAudioCheckIn";
 import { SUPPORTED_LANGUAGES, TRANSLATIONS, SupportedLanguage } from "@/lib/languageConfig";
 import { ThemeToggle } from "@/components/ThemeToggle";
@@ -11,12 +16,9 @@ import { VisitorAssistance } from "@/components/checkin/VisitorAssistance";
 import { AppointmentsList } from "@/components/checkin/AppointmentsList";
 import { DepartmentRouting } from "@/components/checkin/DepartmentRouting";
 import { AgentInteraction } from "@/components/checkin/AgentInteraction";
-import { AppointmentsList } from "@/components/checkin/AppointmentsList";
 import { ConfirmationStep } from "@/components/checkin/ConfirmationStep";
-import { DepartmentRouting } from "@/components/checkin/DepartmentRouting";
 import { HelpStep } from "@/components/checkin/HelpStep";
 import { PersistentNavigation } from "@/components/checkin/PersistentNavigation";
-import { WelcomeStep } from "@/components/checkin/WelcomeStep";
 import { ErrorMessage } from "@/components/shared/ErrorMessage";
 
 // Types
@@ -51,7 +53,6 @@ export default function HomePage() {
   // Audio check-in hook
   const {
     startCheckIn,
-    cancelCheckIn,
     isListening,
     isSpeaking: isCheckInSpeaking,
     isVoiceSupported,
@@ -64,6 +65,11 @@ export default function HomePage() {
     onReset: () => {
       setValue("firstName", "");
       setValue("lastName", "");
+    },
+    onComplete: () => {
+      // After audio check-in completes, reset to language selection screen
+      console.log("[HomePage] Audio check-in completed, resetting to language selection");
+      resetFlow();
     },
   });
 
@@ -238,7 +244,6 @@ export default function HomePage() {
             onLanguageSelected={handleLanguageSelected}
             onVisitorClick={handleVisitorClick}
             startCheckIn={startCheckIn}
-            cancelCheckIn={cancelCheckIn}
             isListening={isListening}
             isCheckInSpeaking={isCheckInSpeaking}
             isVoiceSupported={isVoiceSupported}
@@ -328,7 +333,6 @@ export default function HomePage() {
             onLanguageSelected={handleLanguageSelected}
             onVisitorClick={handleVisitorClick}
             startCheckIn={startCheckIn}
-            cancelCheckIn={cancelCheckIn}
             isListening={isListening}
             isCheckInSpeaking={isCheckInSpeaking}
             isVoiceSupported={isVoiceSupported}
@@ -365,7 +369,6 @@ export default function HomePage() {
         )}
       </div>
 
-      <AccessibilityControls />
     </main>
   );
 }
