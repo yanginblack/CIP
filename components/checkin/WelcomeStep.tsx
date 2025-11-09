@@ -100,8 +100,8 @@ export function WelcomeStep({
   return (
     <div className="text-center space-y-8">
       <div className="space-y-4">
-        <h1 className="text-4xl font-bold text-purple-900">Welcome</h1>
-        <p className="text-lg text-gray-600">
+        <h1 className="text-4xl font-bold text-purple-900 dark:text-purple-300">Welcome</h1>
+        <p className="text-lg text-gray-600 dark:text-gray-300">
           Please enter your name to check in
         </p>
       </div>
@@ -114,7 +114,7 @@ export function WelcomeStep({
         <div className="space-y-4">
           <input
             {...formRegister("firstName")}
-            className="w-full px-6 py-4 text-lg border-2 border-purple-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+            className="w-full px-6 py-4 text-lg border-2 border-purple-300 dark:border-purple-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
             placeholder="First Name"
             autoComplete="off"
             autoCorrect="off"
@@ -129,7 +129,7 @@ export function WelcomeStep({
 
           <input
             {...formRegister("lastName")}
-            className="w-full px-6 py-4 text-lg border-2 border-purple-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+            className="w-full px-6 py-4 text-lg border-2 border-purple-300 dark:border-purple-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
             placeholder="Last Name"
             autoComplete="off"
             autoCorrect="off"
