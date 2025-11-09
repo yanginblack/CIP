@@ -56,7 +56,7 @@ export function useAudioCheckIn({ onNameConfirmed, onReset }: UseAudioCheckInOpt
       onReset();
     }
 
-    // Multi-language welcome prompt
+    // Multi-language welcome prompt with short pauses
     // Speak "Welcome" in English first
     speak("Welcome!", "en-US");
 
@@ -64,25 +64,26 @@ export function useAudioCheckIn({ onNameConfirmed, onReset }: UseAudioCheckInOpt
       speak("Please say:", "en-US");
     }, 1500);
 
+    // Speak each language with 1.25 second gaps (1000ms speech + 250ms pause)
     setTimeout(() => {
       speak("English", "en-US");
     }, 2500);
 
     setTimeout(() => {
       speak("Español", "es-US");
-    }, 3500);
+    }, 3500); // 250ms pause after "English"
 
     setTimeout(() => {
       speak("中文", "zh-CN");
-    }, 4500);
+    }, 5000); // 250ms pause after "Español"
 
     setTimeout(() => {
       speak("to select your language", "en-US");
-    }, 5500);
+    }, 6250); // 250ms pause after "中文"
 
     setTimeout(() => {
       startListening();
-    }, 7000);
+    }, 8000);
   }, [isListening, speak, startListening, resetTranscript, onReset]);
 
   // Process voice transcript
