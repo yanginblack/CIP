@@ -34,6 +34,7 @@ export function useAudioCheckIn({ onNameConfirmed, onReset }: UseAudioCheckInOpt
     isListening,
     transcript,
     startListening,
+    stopListening,
     resetTranscript,
     changeLanguage,
     isSupported: isVoiceSupported,
@@ -85,6 +86,25 @@ export function useAudioCheckIn({ onNameConfirmed, onReset }: UseAudioCheckInOpt
       startListening();
     }, 8000);
   }, [isListening, speak, startListening, resetTranscript, onReset]);
+
+  // Cancel the audio check-in process
+  const cancelCheckIn = useCallback(() => {
+    console.log("[AudioCheckIn] Canceling check-in process");
+
+    // Stop any ongoing listening
+    stopListening();
+
+    // Reset all state
+    resetTranscript();
+    setCapturedName(null);
+    setCheckInState("language_selection");
+    setSelectedLanguage("en");
+
+    // Reset form if provided
+    if (onReset) {
+      onReset();
+    }
+  }, [stopListening, resetTranscript, onReset]);
 
   // Process voice transcript
   useEffect(() => {
@@ -227,6 +247,7 @@ export function useAudioCheckIn({ onNameConfirmed, onReset }: UseAudioCheckInOpt
 
   return {
     startCheckIn,
+    cancelCheckIn,
     isListening,
     isSpeaking,
     isVoiceSupported,

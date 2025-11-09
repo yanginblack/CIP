@@ -28,6 +28,7 @@ export interface WelcomeStepProps extends BaseStepProps {
   isLoading: boolean;
   onSubmit: (data: { firstName: string; lastName: string }) => void;
   startCheckIn?: () => void;
+  cancelCheckIn?: () => void;
   isListening?: boolean;
   isCheckInSpeaking?: boolean;
   isVoiceSupported?: boolean;

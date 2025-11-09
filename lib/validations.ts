@@ -16,6 +16,14 @@ export const nameSearchSchema = z.object({
 
 export type NameSearchInput = z.infer<typeof nameSearchSchema>;
 
+// Full name schema for single field input
+export const fullNameSearchSchema = z.object({
+  fullName: z.string().trim().min(2, "Please enter your full name").max(160, "Name too long"),
+  service: z.string().optional(),
+});
+
+export type FullNameSearchInput = z.infer<typeof fullNameSearchSchema>;
+
 export const createAppointmentSchema = z.object({
   firstName: z.string().trim().min(1, "First name is required").max(80, "First name too long"),
   lastName: z.string().trim().min(1, "Last name is required").max(80, "Last name too long"),
