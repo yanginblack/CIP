@@ -5,13 +5,22 @@ import { useVoiceInput } from "@/hooks/useVoiceInput";
 import { useEffect, useState } from "react";
 import { ChatInput } from "./ChatInput";
 import { MessageList } from "./MessageList";
+import { SupportedLanguage, SUPPORTED_LANGUAGES } from "@/lib/languageConfig";
+import { getUITranslations } from "@/lib/uiTranslations";
 
 interface Message {
   role: "user" | "assistant";
   content: string;
 }
 
-export function AssistantSection() {
+interface AssistantSectionProps {
+  language: SupportedLanguage;
+}
+
+export function AssistantSection({ language }: AssistantSectionProps) {
+  const t = getUITranslations(language);
+  const langConfig = SUPPORTED_LANGUAGES[language];
+
   async function sendToServer(
     messages: Message[],
     onChunk: (text: string) => void
@@ -42,13 +51,12 @@ export function AssistantSection() {
 
     return fullText.trim();
   }
-  // State management
+
   const [messages, setMessages] = useState<Message[]>([]);
   const [textInput, setTextInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState(false);
 
-  // Voice input hook (continuous recording)
   const {
     isSupported: isVoiceSupported,
     isListening,
@@ -58,7 +66,6 @@ export function AssistantSection() {
     resetTranscript,
   } = useVoiceInput();
 
-  // Speech synthesis hook for optional playback
   const {
     speak,
     stop: stopSpeech,
@@ -69,17 +76,14 @@ export function AssistantSection() {
     number | null
   >(null);
 
-  // Update text input when voice transcript changes
   useEffect(() => {
     if (transcript) {
       setTextInput((prev) => {
-        // If there's existing text, add a space before appending
         return prev ? `${prev} ${transcript}` : transcript;
       });
     }
   }, [transcript]);
 
-  // Handle voice recording toggle
   const handleVoiceToggle = () => {
     if (isListening) {
       stopListening();
@@ -96,17 +100,16 @@ export function AssistantSection() {
 
     setMessages((prev) => [...prev, userMessage]);
     setTextInput("");
-    setError(null);
+    setError(false);
     setIsLoading(true);
 
     try {
-      // Add a temporary assistant message to be updated live
       setMessages((prev) => [...prev, { role: "assistant", content: "" }]);
 
       const newMessages = [...messages, userMessage];
       let latestAssistantText = "";
 
-      const finalText = await sendToServer(newMessages, (partial) => {
+      await sendToServer(newMessages, (partial) => {
         latestAssistantText = partial;
         setMessages((prev) => {
           const updated = [...prev];
@@ -115,57 +118,56 @@ export function AssistantSection() {
         });
       });
 
-      // Final speech synthesis
-      if (isSpeechSupported) speak(finalText);
+      if (isSpeechSupported && latestAssistantText) {
+        speak(latestAssistantText, langConfig.voiceLang);
+      }
     } catch (err) {
-      setError("Failed to send message. Please try again.");
+      setError(true);
       console.error("Error sending message:", err);
     } finally {
       setIsLoading(false);
     }
   };
 
-  // Handle playing assistant message audio
   const handlePlayMessage = (index: number, content: string) => {
     if (speakingMessageIndex === index && isSpeaking) {
       stopSpeech();
       setSpeakingMessageIndex(null);
     } else {
-      stopSpeech(); // Stop any currently playing audio
+      stopSpeech();
       setSpeakingMessageIndex(index);
-      speak(content, "en-US", () => {
+      speak(content, langConfig.voiceLang, () => {
         setSpeakingMessageIndex(null);
       });
     }
   };
 
   return (
-    <div className="bg-blue-50 p-6 rounded-lg border-2 border-blue-200">
-      <h3 className="text-lg font-semibold text-blue-900 mb-2">
-        Online Assistant
+    <div className="bg-blue-50 dark:bg-blue-900/20 p-6 rounded-lg border-2 border-blue-200 dark:border-blue-700">
+      <h3 className="text-lg font-semibold text-blue-900 dark:text-blue-300 mb-2">
+        {t.onlineAssistant}
       </h3>
-      <p className="text-sm text-blue-700 mb-4">
-        While you&apos;re waiting for assistance from our front desk, or if our front
-        desk is currently occupied, you can also talk to our online assistant.
+      <p className="text-sm text-blue-700 dark:text-blue-300 mb-4">
+        {t.onlineAssistantDescription}
       </p>
 
-      {/* Chat Messages Area */}
       <MessageList
         messages={messages}
         isSpeechSupported={isSpeechSupported}
         speakingMessageIndex={speakingMessageIndex}
         isSpeaking={isSpeaking}
         onPlayMessage={handlePlayMessage}
+        emptyStateText={t.assistantConversationPrompt}
+        listenLabel={t.assistantListen}
+        stopLabel={t.assistantStop}
       />
 
-      {/* Error Message */}
       {error && (
         <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-4 text-sm">
-          {error}
+          {t.assistantError}
         </div>
       )}
 
-      {/* Input Section */}
       <ChatInput
         textInput={textInput}
         isLoading={isLoading}
@@ -174,6 +176,13 @@ export function AssistantSection() {
         onTextChange={setTextInput}
         onSend={handleSendMessage}
         onVoiceToggle={handleVoiceToggle}
+        placeholder={t.assistantPlaceholder}
+        sendLabel={t.assistantSend}
+        sendingLabel={t.assistantSending}
+        voiceStartLabel={t.assistantVoiceStart}
+        voiceStopLabel={t.assistantVoiceStop}
+        recordingIndicator={t.assistantRecordingIndicator}
+        helperText={t.assistantHelperText}
       />
     </div>
   );

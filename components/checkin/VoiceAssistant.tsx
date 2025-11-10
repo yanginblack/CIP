@@ -159,18 +159,18 @@ export function VoiceAssistant({ onClose }: VoiceAssistantProps) {
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col">
+      <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col">
         {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b">
+        <div className="flex items-center justify-between p-6 border-b dark:border-gray-700">
           <div>
-            <h2 className="text-2xl font-bold text-gray-900">CIL Voice Assistant</h2>
-            <p className="text-sm text-gray-600 mt-1">
+            <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100">CIL Voice Assistant</h2>
+            <p className="text-sm text-gray-600 dark:text-gray-300 mt-1">
               {isListening ? "🎙️ Listening..." : "Click the button to start speaking"}
             </p>
           </div>
           <button
             onClick={onClose}
-            className="text-gray-500 hover:text-gray-700 text-2xl font-bold w-10 h-10 flex items-center justify-center rounded-full hover:bg-gray-100 transition-colors"
+            className="text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 text-2xl font-bold w-10 h-10 flex items-center justify-center rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
             aria-label="Close"
           >
             ✕
@@ -179,17 +179,17 @@ export function VoiceAssistant({ onClose }: VoiceAssistantProps) {
 
         {/* Error Message */}
         {error && (
-          <div className="mx-6 mt-4 bg-red-50 border border-red-200 text-red-800 px-4 py-3 rounded-lg text-sm">
+          <div className="mx-6 mt-4 bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 text-red-800 dark:text-red-200 px-4 py-3 rounded-lg text-sm">
             {error}
           </div>
         )}
 
         {/* Chat Area */}
-        <div className="flex-1 overflow-y-auto p-6 bg-gray-50 space-y-4 min-h-0">
+        <div className="flex-1 overflow-y-auto p-6 bg-gray-50 dark:bg-gray-900 space-y-4 min-h-0">
           {messages.length === 0 && !currentBotMessage && (
-            <div className="text-center text-gray-400 mt-12">
+            <div className="text-center text-gray-400 dark:text-gray-500 mt-12">
               <p className="text-lg">Welcome! Click the microphone button to start.</p>
-              <p className="text-sm mt-2">I'll listen and respond to your questions.</p>
+              <p className="text-sm mt-2">I&apos;ll listen and respond to your questions.</p>
             </div>
           )}
 

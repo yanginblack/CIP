@@ -21,7 +21,6 @@ import { ContactInfoStep } from "@/components/checkin/ContactInfoStep";
 import { DepartmentRouting } from "@/components/checkin/DepartmentRouting";
 import { HelpStep } from "@/components/checkin/HelpStep";
 import { LanguageSelection } from "@/components/checkin/LanguageSelection";
-import { PersistentNavigation } from "@/components/checkin/PersistentNavigation";
 import { VisitorAssistance } from "@/components/checkin/VisitorAssistance";
 import { ErrorMessage } from "@/components/shared/ErrorMessage";
 
@@ -85,12 +84,8 @@ export default function HomePage() {
 
   const handleLanguageSelected = (language: SupportedLanguage) => {
     setSelectedLanguage(language);
-    if (language === "en" && currentStep === "language-selection") {
-      // Check if this was clicked from Visitor button
-      setCurrentStep("welcome-page");
-    } else {
-      setCurrentStep("welcome-page");
-    }
+    // After selecting language, show the Welcome page with service selection
+    setCurrentStep("welcome");
   };
 
   const handleVisitorClick = () => {
@@ -284,6 +279,9 @@ export default function HomePage() {
             isListening={isListening}
             isCheckInSpeaking={isCheckInSpeaking}
             isVoiceSupported={isVoiceSupported}
+            onStepChange={setCurrentStep}
+            onReset={resetFlow}
+            onAgentRequest={() => setCurrentStep("agent-interaction")}
           />
         );
 
@@ -298,6 +296,7 @@ export default function HomePage() {
       case "appointments":
         return (
           <AppointmentsList
+            language={selectedLanguage}
             appointments={appointments}
             userInfo={userInfo}
             onAppointmentSelect={handleAppointmentSelect}
@@ -307,37 +306,43 @@ export default function HomePage() {
             onToggleAudio={isSpeaking ? stop : announceResults}
             isAudioSupported={isSupported}
             onReset={resetFlow}
+            onAgentRequest={() => setCurrentStep("agent-interaction")}
           />
         );
 
       case "department-routing":
         return selectedAppointment ? (
           <DepartmentRouting
+            language={selectedLanguage}
             selectedAppointment={selectedAppointment}
             isLoading={isLoading}
             onCheckIn={handleCheckIn}
             formatDateTime={formatDateTime}
             onStepChange={setCurrentStep}
             onReset={resetFlow}
+            onAgentRequest={() => setCurrentStep("agent-interaction")}
           />
         ) : null;
 
       case "agent-interaction":
-        return <AgentInteraction />;
+        return <AgentInteraction language={selectedLanguage} onReset={resetFlow} />;
 
       case "confirmation":
         return (
           <ConfirmationStep
+            language={selectedLanguage}
             selectedAppointment={selectedAppointment}
             onReset={resetFlow}
             formatDateTime={formatDateTime}
             onStepChange={setCurrentStep}
+            onAgentRequest={() => setCurrentStep("agent-interaction")}
           />
         );
 
       case "help":
         return (
           <HelpStep
+            language={selectedLanguage}
             onAgentRequest={() => setCurrentStep("agent-interaction")}
             onStepChange={setCurrentStep}
             onReset={resetFlow}
@@ -348,19 +353,8 @@ export default function HomePage() {
         );
       case "welcome":
         return (
-          <LanguageSelection
-            onLanguageSelected={handleLanguageSelected}
-            onVisitorClick={handleVisitorClick}
-            startCheckIn={startCheckIn}
-            isListening={isListening}
-            isCheckInSpeaking={isCheckInSpeaking}
-            isVoiceSupported={isVoiceSupported}
-          />
-        );
-
-      default:
-        return (
           <WelcomeStep
+            language={selectedLanguage}
             isLoading={isLoading}
             onSubmit={performSearch}
             startCheckIn={startCheckIn}
@@ -373,6 +367,19 @@ export default function HomePage() {
             formErrors={errors}
             onStepChange={setCurrentStep}
             onReset={resetFlow}
+            onAgentRequest={() => setCurrentStep("agent-interaction")}
+          />
+        );
+
+      default:
+        return (
+          <LanguageSelection
+            onLanguageSelected={handleLanguageSelected}
+            onVisitorClick={handleVisitorClick}
+            startCheckIn={startCheckIn}
+            isListening={isListening}
+            isCheckInSpeaking={isCheckInSpeaking}
+            isVoiceSupported={isVoiceSupported}
           />
         );
     }
@@ -396,15 +403,6 @@ export default function HomePage() {
 
           {getCurrentStepContent()}
         </div>
-
-        {currentStep !== "language-selection" &&
-          currentStep !== "visitor-assistance" && (
-            <PersistentNavigation
-              currentStep={currentStep}
-              onReset={resetFlow}
-              onAgentRequest={() => setCurrentStep("agent-interaction")}
-            />
-          )}
       </div>
     </main>
   );

@@ -2,8 +2,10 @@
 
 import { MicrophoneIcon } from "@/components/icons";
 import { SupportedLanguage, TRANSLATIONS } from "@/lib/languageConfig";
+import { getUITranslations } from "@/lib/uiTranslations";
+import { BaseStepProps } from "./types";
 
-interface ContactInfoStepProps {
+interface ContactInfoStepProps extends BaseStepProps {
   language: SupportedLanguage;
   isLoading: boolean;
   onSubmit: (data: { firstName: string; lastName: string }) => void;
@@ -29,8 +31,11 @@ export function ContactInfoStep({
   isListening = false,
   isCheckInSpeaking = false,
   isVoiceSupported = false,
+  onReset,
+  onAgentRequest,
 }: ContactInfoStepProps) {
   const t = TRANSLATIONS[language];
+  const ui = getUITranslations(language);
 
   // Get welcome text based on language
   const welcomeText = {
@@ -72,37 +77,38 @@ export function ContactInfoStep({
       {/* Manual Entry Form */}
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-6 max-w-md mx-auto">
         <div className="space-y-4">
-          <div>
-            <input
-              {...formRegister("firstName")}
-              className="w-full px-6 py-4 text-lg rounded-lg focus:outline-none focus:ring-2 transition-all"
-              style={{
-                background: "var(--input-bg)",
-                border: `2px solid var(--input-border)`,
-                color: "var(--text-primary)"
-              }}
-              placeholder={language === "en" ? "First Name" : language === "es" ? "Nombre" : "名"}
-            />
-            {formErrors.firstName && (
-              <p className="text-red-600 text-sm mt-1">{formErrors.firstName.message}</p>
-            )}
-          </div>
-
-          <div>
-            <input
-              {...formRegister("lastName")}
-              className="w-full px-6 py-4 text-lg rounded-lg focus:outline-none focus:ring-2 transition-all"
-              style={{
-                background: "var(--input-bg)",
-                border: `2px solid var(--input-border)`,
-                color: "var(--text-primary)"
-              }}
-              placeholder={language === "en" ? "Last Name" : language === "es" ? "Apellido" : "姓"}
-            />
-            {formErrors.lastName && (
-              <p className="text-red-600 text-sm mt-1">{formErrors.lastName.message}</p>
-            )}
-          </div>
+          {(language === "zh"
+            ? (["lastName", "firstName"] as const)
+            : (["firstName", "lastName"] as const)
+          ).map((field) => (
+            <div key={field}>
+              <input
+                {...formRegister(field)}
+                className="w-full px-6 py-4 text-lg rounded-lg focus:outline-none focus:ring-2 transition-all"
+                style={{
+                  background: "var(--input-bg)",
+                  border: `2px solid var(--input-border)`,
+                  color: "var(--text-primary)"
+                }}
+                placeholder={
+                  field === "firstName"
+                    ? language === "en"
+                      ? "First Name"
+                      : language === "es"
+                      ? "Nombre"
+                      : "名"
+                    : language === "en"
+                    ? "Last Name"
+                    : language === "es"
+                    ? "Apellido"
+                    : "姓"
+                }
+              />
+              {formErrors[field] && (
+                <p className="text-red-600 text-sm mt-1">{formErrors[field]?.message}</p>
+              )}
+            </div>
+          ))}
         </div>
 
         <div className="flex gap-4">
@@ -132,6 +138,42 @@ export function ContactInfoStep({
             {isLoading
               ? (language === "en" ? "Searching..." : language === "es" ? "Buscando..." : "搜索中...")
               : (language === "en" ? "Search Appointments" : language === "es" ? "Buscar Citas" : "搜索预约")}
+          </button>
+        </div>
+
+        {/* Divider */}
+        <hr className="border-t-2 border-gray-300 dark:border-gray-600" />
+
+        {/* Home Page and Call for Staff Buttons */}
+        <div className="flex flex-row gap-4">
+          <button
+            type="button"
+            onClick={onReset}
+            className="flex-1 flex items-center justify-center gap-3 px-8 py-6 text-2xl font-bold rounded-xl transition-all duration-200 shadow-md hover:shadow-lg"
+            style={{
+              color: "var(--primary-light)",
+              background: "var(--input-bg)",
+              border: "2px solid var(--primary-light)"
+            }}
+            aria-label={ui.homePageAriaLabel}
+          >
+            <span className="text-3xl" role="img" aria-label="House">🏠</span>
+            <span>{ui.homePage}</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={onAgentRequest}
+            className="flex-1 flex items-center justify-center gap-3 px-8 py-6 text-2xl font-bold rounded-xl transition-all duration-200 shadow-md hover:shadow-lg"
+            style={{
+              color: "var(--primary-light)",
+              background: "var(--input-bg)",
+              border: "2px solid var(--primary-light)"
+            }}
+            aria-label={ui.callForStaffAriaLabel}
+          >
+            <span className="text-3xl" role="img" aria-label="Phone">📞</span>
+            <span>{ui.callForStaff}</span>
           </button>
         </div>
       </form>
