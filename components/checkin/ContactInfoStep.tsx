@@ -77,37 +77,38 @@ export function ContactInfoStep({
       {/* Manual Entry Form */}
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-6 max-w-md mx-auto">
         <div className="space-y-4">
-          <div>
-            <input
-              {...formRegister("firstName")}
-              className="w-full px-6 py-4 text-lg rounded-lg focus:outline-none focus:ring-2 transition-all"
-              style={{
-                background: "var(--input-bg)",
-                border: `2px solid var(--input-border)`,
-                color: "var(--text-primary)"
-              }}
-              placeholder={language === "en" ? "First Name" : language === "es" ? "Nombre" : "名"}
-            />
-            {formErrors.firstName && (
-              <p className="text-red-600 text-sm mt-1">{formErrors.firstName.message}</p>
-            )}
-          </div>
-
-          <div>
-            <input
-              {...formRegister("lastName")}
-              className="w-full px-6 py-4 text-lg rounded-lg focus:outline-none focus:ring-2 transition-all"
-              style={{
-                background: "var(--input-bg)",
-                border: `2px solid var(--input-border)`,
-                color: "var(--text-primary)"
-              }}
-              placeholder={language === "en" ? "Last Name" : language === "es" ? "Apellido" : "姓"}
-            />
-            {formErrors.lastName && (
-              <p className="text-red-600 text-sm mt-1">{formErrors.lastName.message}</p>
-            )}
-          </div>
+          {(language === "zh"
+            ? (["lastName", "firstName"] as const)
+            : (["firstName", "lastName"] as const)
+          ).map((field) => (
+            <div key={field}>
+              <input
+                {...formRegister(field)}
+                className="w-full px-6 py-4 text-lg rounded-lg focus:outline-none focus:ring-2 transition-all"
+                style={{
+                  background: "var(--input-bg)",
+                  border: `2px solid var(--input-border)`,
+                  color: "var(--text-primary)"
+                }}
+                placeholder={
+                  field === "firstName"
+                    ? language === "en"
+                      ? "First Name"
+                      : language === "es"
+                      ? "Nombre"
+                      : "名"
+                    : language === "en"
+                    ? "Last Name"
+                    : language === "es"
+                    ? "Apellido"
+                    : "姓"
+                }
+              />
+              {formErrors[field] && (
+                <p className="text-red-600 text-sm mt-1">{formErrors[field]?.message}</p>
+              )}
+            </div>
+          ))}
         </div>
 
         <div className="flex gap-4">

@@ -15,7 +15,7 @@ export const UI_TRANSLATIONS = {
     cancel: "Cancel",
     referenceToServices: "Reference to Services:",
     primaryServices: "Primary Services:",
-    checkAdditionalServices: "Check for Additional Services and/or Info:",
+    checkAdditionalServices: "Additional Services and/or Info:",
     seniorServices: "Senior Services",
     housingAssistance: "Housing Assistance",
     youthPrograms: "Youth Programs",

@@ -122,35 +122,25 @@ export function WelcomeStep({
         <div className="space-y-6">
           <h3 className="text-2xl font-bold text-gray-800 dark:text-gray-200 text-left">{t.inputYourName}</h3>
           <div className="space-y-4">
-            <div>
-              <input
-                {...formRegister("firstName")}
-                className="w-full px-6 py-4 text-xl bg-white dark:bg-purple-dark text-gray-900 dark:text-gray-100 border-2 border-gray-300 dark:border-lighter-plum/50 rounded-xl focus:ring-2 focus:ring-light-plum focus:border-transparent transition-all duration-200"
-                placeholder={t.firstNamePlaceholder}
-                autoComplete="off"
-                autoCorrect="off"
-                autoCapitalize="words"
-                spellCheck="false"
-              />
-              {formErrors.firstName && (
-                <p className="text-red-500 dark:text-red-400 text-sm mt-2">{formErrors.firstName.message}</p>
-              )}
-            </div>
-
-            <div>
-              <input
-                {...formRegister("lastName")}
-                className="w-full px-6 py-4 text-xl bg-white dark:bg-purple-dark text-gray-900 dark:text-gray-100 border-2 border-gray-300 dark:border-lighter-plum/50 rounded-xl focus:ring-2 focus:ring-light-plum focus:border-transparent transition-all duration-200"
-                placeholder={t.lastNamePlaceholder}
-                autoComplete="off"
-                autoCorrect="off"
-                autoCapitalize="words"
-                spellCheck="false"
-              />
-              {formErrors.lastName && (
-                <p className="text-red-500 dark:text-red-400 text-sm mt-2">{formErrors.lastName.message}</p>
-              )}
-            </div>
+            {(language === "zh"
+              ? (["lastName", "firstName"] as const)
+              : (["firstName", "lastName"] as const)
+            ).map((field) => (
+              <div key={field}>
+                <input
+                  {...formRegister(field)}
+                  className="w-full px-6 py-4 text-xl bg-white dark:bg-purple-dark text-gray-900 dark:text-gray-100 border-2 border-gray-300 dark:border-lighter-plum/50 rounded-xl focus:ring-2 focus:ring-light-plum focus:border-transparent transition-all duration-200"
+                  placeholder={field === "firstName" ? t.firstNamePlaceholder : t.lastNamePlaceholder}
+                  autoComplete="off"
+                  autoCorrect="off"
+                  autoCapitalize="words"
+                  spellCheck="false"
+                />
+                {formErrors[field] && (
+                  <p className="text-red-500 dark:text-red-400 text-sm mt-2">{formErrors[field]?.message}</p>
+                )}
+              </div>
+            ))}
           </div>
         </div>
 
