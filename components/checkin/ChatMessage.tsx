@@ -9,6 +9,8 @@ interface ChatMessageProps {
   isSpeechSupported: boolean;
   isSpeaking: boolean;
   onPlayMessage: (index: number, content: string) => void;
+  listenLabel: string;
+  stopLabel: string;
 }
 
 export function ChatMessage({
@@ -18,6 +20,8 @@ export function ChatMessage({
   isSpeechSupported,
   isSpeaking,
   onPlayMessage,
+  listenLabel,
+  stopLabel,
 }: ChatMessageProps) {
   return (
     <div
@@ -39,17 +43,17 @@ export function ChatMessage({
           <button
             onClick={() => onPlayMessage(index, content)}
             className="mt-2 flex items-center gap-1 text-xs text-blue-600 hover:text-blue-800 transition-colors"
-            aria-label={isSpeaking ? "Stop reading" : "Read aloud"}
+            aria-label={isSpeaking ? stopLabel : listenLabel}
           >
             {isSpeaking ? (
               <>
                 <PauseIcon className="w-4 h-4" />
-                <span>Stop</span>
+                <span>{stopLabel}</span>
               </>
             ) : (
               <>
                 <SpeakerIcon className="w-4 h-4" />
-                <span>Listen</span>
+                <span>{listenLabel}</span>
               </>
             )}
           </button>

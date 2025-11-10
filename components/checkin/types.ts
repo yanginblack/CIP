@@ -1,3 +1,5 @@
+import { SupportedLanguage } from "@/lib/languageConfig";
+
 export type Appointment = {
   id: string;
   startUtc: string;
@@ -20,8 +22,10 @@ export type CheckInStep =
   | 'help';
 
 export interface BaseStepProps {
+  language?: SupportedLanguage;
   onStepChange: (step: CheckInStep) => void;
   onReset: () => void;
+  onAgentRequest: () => void;
 }
 
 export interface WelcomeStepProps extends BaseStepProps {

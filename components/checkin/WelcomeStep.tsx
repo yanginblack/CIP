@@ -2,8 +2,10 @@ import { MicrophoneIcon } from "@/components/icons";
 import { useEffect, useState } from "react";
 import { WelcomeStepProps } from "./types";
 import { VoiceAssistant } from "./VoiceAssistant";
+import { getUITranslations } from "@/lib/uiTranslations";
 
 export function WelcomeStep({
+  language,
   isLoading,
   onSubmit,
   startCheckIn,
@@ -14,7 +16,10 @@ export function WelcomeStep({
   formRegister,
   handleSubmit,
   formErrors,
+  onReset,
+  onAgentRequest,
 }: WelcomeStepProps) {
+  const t = getUITranslations(language || 'en');
   const [showCancelButton, setShowCancelButton] = useState(false);
   const [showListeningText, setShowListeningText] = useState(false);
   const [disableButton, setDisableButton] = useState(false);
@@ -102,9 +107,9 @@ export function WelcomeStep({
   return (
     <div className="text-center space-y-8">
       <div className="space-y-6">
-        <h1 className="text-4xl font-bold text-light-plum dark:text-lighter-plum">Welcome to Our Center</h1>
+        <h1 className="text-4xl font-bold text-light-plum dark:text-lighter-plum">{t.welcomeTitle}</h1>
         <p className="text-lg text-gray-600 dark:text-gray-300 leading-relaxed">
-          Experience accessible services designed for independent living. Our compassionate team is dedicated to helping you thrive and maintain your independence.
+          {t.welcomeDescription}
         </p>
       </div>
 
@@ -113,90 +118,51 @@ export function WelcomeStep({
         className="space-y-8 max-w-2xl mx-auto"
         autoComplete="off"
       >
-        {/* Name Inputs */}
-        <div className="space-y-4">
-          <div>
-            <input
-              {...formRegister("firstName")}
-              className="w-full px-6 py-4 text-xl bg-white dark:bg-purple-dark text-gray-900 dark:text-gray-100 border-2 border-gray-300 dark:border-lighter-plum/50 rounded-xl focus:ring-2 focus:ring-light-plum focus:border-transparent transition-all duration-200"
-              placeholder="First Name"
-              autoComplete="off"
-              autoCorrect="off"
-              autoCapitalize="words"
-              spellCheck="false"
-            />
-            {formErrors.firstName && (
-              <p className="text-red-500 dark:text-red-400 text-sm mt-2">{formErrors.firstName.message}</p>
-            )}
-          </div>
+        {/* Name Inputs Section */}
+        <div className="space-y-6">
+          <h3 className="text-2xl font-bold text-gray-800 dark:text-gray-200 text-left">{t.inputYourName}</h3>
+          <div className="space-y-4">
+            <div>
+              <input
+                {...formRegister("firstName")}
+                className="w-full px-6 py-4 text-xl bg-white dark:bg-purple-dark text-gray-900 dark:text-gray-100 border-2 border-gray-300 dark:border-lighter-plum/50 rounded-xl focus:ring-2 focus:ring-light-plum focus:border-transparent transition-all duration-200"
+                placeholder={t.firstNamePlaceholder}
+                autoComplete="off"
+                autoCorrect="off"
+                autoCapitalize="words"
+                spellCheck="false"
+              />
+              {formErrors.firstName && (
+                <p className="text-red-500 dark:text-red-400 text-sm mt-2">{formErrors.firstName.message}</p>
+              )}
+            </div>
 
-          <div>
-            <input
-              {...formRegister("lastName")}
-              className="w-full px-6 py-4 text-xl bg-white dark:bg-purple-dark text-gray-900 dark:text-gray-100 border-2 border-gray-300 dark:border-lighter-plum/50 rounded-xl focus:ring-2 focus:ring-light-plum focus:border-transparent transition-all duration-200"
-              placeholder="Last Name"
-              autoComplete="off"
-              autoCorrect="off"
-              autoCapitalize="words"
-              spellCheck="false"
-            />
-            {formErrors.lastName && (
-              <p className="text-red-500 dark:text-red-400 text-sm mt-2">{formErrors.lastName.message}</p>
-            )}
-          </div>
-        </div>
-
-        {/* Service Selection */}
-        <div className="space-y-4">
-          <h3 className="text-xl font-semibold text-gray-800 dark:text-gray-200 text-left">Select a Service:</h3>
-          <div className="grid grid-cols-2 gap-4">
-            <button
-              type="button"
-              className="px-6 py-4 bg-light-plum hover:bg-purple-700 text-white rounded-xl transition-all duration-200 font-semibold text-lg shadow-md hover:shadow-lg"
-            >
-              Senior Services
-            </button>
-            <button
-              type="button"
-              className="px-6 py-4 bg-amber hover:bg-yellow-600 text-white rounded-xl transition-all duration-200 font-semibold text-lg shadow-md hover:shadow-lg"
-            >
-              Housing Assistance
-            </button>
-            <button
-              type="button"
-              className="px-6 py-4 bg-light-plum hover:bg-purple-700 text-white rounded-xl transition-all duration-200 font-semibold text-lg shadow-md hover:shadow-lg"
-            >
-              Youth Programs
-            </button>
-            <button
-              type="button"
-              className="px-6 py-4 bg-lighter-plum hover:bg-purple-500 text-white rounded-xl transition-all duration-200 font-semibold text-lg shadow-md hover:shadow-lg"
-            >
-              Travel Program
-            </button>
+            <div>
+              <input
+                {...formRegister("lastName")}
+                className="w-full px-6 py-4 text-xl bg-white dark:bg-purple-dark text-gray-900 dark:text-gray-100 border-2 border-gray-300 dark:border-lighter-plum/50 rounded-xl focus:ring-2 focus:ring-light-plum focus:border-transparent transition-all duration-200"
+                placeholder={t.lastNamePlaceholder}
+                autoComplete="off"
+                autoCorrect="off"
+                autoCapitalize="words"
+                spellCheck="false"
+              />
+              {formErrors.lastName && (
+                <p className="text-red-500 dark:text-red-400 text-sm mt-2">{formErrors.lastName.message}</p>
+              )}
+            </div>
           </div>
         </div>
 
-        {/* Action Buttons */}
+        {/* Check In Button */}
         <div className="flex gap-4">
           <button
             type="submit"
             disabled={isLoading}
             className="flex-1 bg-light-plum hover:bg-purple-700 text-white py-6 px-8 text-xl font-bold rounded-xl transition-all duration-200 shadow-lg hover:shadow-xl disabled:opacity-50"
           >
-            {isLoading ? "Searching..." : "Check In Now"}
+            {isLoading ? t.searching : t.checkInNow}
           </button>
-
-          {isVoiceSupported && (
-            <button
-              type="button"
-              onClick={() => setShowVoiceAssistant(true)}
-              className="flex items-center justify-center gap-3 px-8 py-6 rounded-xl transition-all duration-200 font-bold text-xl shadow-lg hover:shadow-xl bg-amber hover:bg-yellow-600 text-white"
-            >
-              <MicrophoneIcon />
-              <span>AI Reference</span>
-            </button>
-          )}
 
           {/* Cancel Button - appears after delay */}
           {showCancelButton && cancelCheckIn && (
@@ -206,9 +172,86 @@ export function WelcomeStep({
               className="flex items-center justify-center gap-2 px-6 py-6 bg-red-600 hover:bg-red-700 text-white rounded-xl transition-all duration-200 shadow-lg hover:shadow-xl font-bold"
             >
               <span>✖</span>
-              <span>Cancel</span>
+              <span>{t.cancel}</span>
             </button>
           )}
+        </div>
+
+        {/* Reference to Services Section */}
+        <div className="space-y-6">
+          <h3 className="text-2xl font-bold text-gray-800 dark:text-gray-200 text-left">{t.referenceToServices}</h3>
+
+          {/* Primary Services Subsection */}
+          <div className="space-y-3">
+            <h4 className="text-lg font-semibold text-gray-700 dark:text-gray-300 text-left">{t.primaryServices}</h4>
+            <div className="grid grid-cols-2 gap-4">
+              <button
+                type="button"
+                className="px-6 py-4 bg-light-plum hover:bg-purple-700 text-white rounded-xl transition-all duration-200 font-semibold text-lg shadow-md hover:shadow-lg"
+              >
+                {t.seniorServices}
+              </button>
+              <button
+                type="button"
+                className="px-6 py-4 bg-amber hover:bg-yellow-600 text-white rounded-xl transition-all duration-200 font-semibold text-lg shadow-md hover:shadow-lg"
+              >
+                {t.housingAssistance}
+              </button>
+              <button
+                type="button"
+                className="px-6 py-4 bg-light-plum hover:bg-purple-700 text-white rounded-xl transition-all duration-200 font-semibold text-lg shadow-md hover:shadow-lg"
+              >
+                {t.youthPrograms}
+              </button>
+              <button
+                type="button"
+                className="px-6 py-4 bg-lighter-plum hover:bg-purple-500 text-white rounded-xl transition-all duration-200 font-semibold text-lg shadow-md hover:shadow-lg"
+              >
+                {t.travelProgram}
+              </button>
+            </div>
+          </div>
+
+          {/* Additional Services Subsection */}
+          <div className="space-y-3">
+            <h4 className="text-lg font-semibold text-gray-700 dark:text-gray-300 text-left">{t.checkAdditionalServices}</h4>
+            {isVoiceSupported && (
+              <button
+                type="button"
+                onClick={() => setShowVoiceAssistant(true)}
+                className="w-full flex items-center justify-center gap-3 px-8 py-6 rounded-xl transition-all duration-200 font-bold text-xl shadow-lg hover:shadow-xl bg-amber hover:bg-yellow-600 text-white"
+              >
+                <MicrophoneIcon />
+                <span>{t.aiReference}</span>
+              </button>
+            )}
+          </div>
+        </div>
+
+        {/* Divider */}
+        <hr className="border-t-2 border-gray-300 dark:border-gray-600" />
+
+        {/* Home Page and Call for Staff Buttons */}
+        <div className="flex flex-row gap-4">
+          <button
+            type="button"
+            onClick={onReset}
+            className="flex-1 flex items-center justify-center gap-3 px-8 py-6 text-2xl font-bold text-light-plum dark:text-lighter-plum bg-white dark:bg-purple-dark border-2 border-light-plum dark:border-lighter-plum rounded-xl hover:bg-light-plum/10 dark:hover:bg-lighter-plum/10 transition-all duration-200 shadow-md hover:shadow-lg"
+            aria-label={t.homePageAriaLabel}
+          >
+            <span className="text-3xl" role="img" aria-label="House">🏠</span>
+            <span>{t.homePage}</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={onAgentRequest}
+            className="flex-1 flex items-center justify-center gap-3 px-8 py-6 text-2xl font-bold text-light-plum dark:text-lighter-plum bg-white dark:bg-purple-dark border-2 border-light-plum dark:border-lighter-plum rounded-xl hover:bg-light-plum/10 dark:hover:bg-lighter-plum/10 transition-all duration-200 shadow-md hover:shadow-lg"
+            aria-label={t.callForStaffAriaLabel}
+          >
+            <span className="text-3xl" role="img" aria-label="Phone">📞</span>
+            <span>{t.callForStaff}</span>
+          </button>
         </div>
       </form>
 

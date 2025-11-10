@@ -2,8 +2,10 @@
 
 import { MicrophoneIcon } from "@/components/icons";
 import { SupportedLanguage, TRANSLATIONS } from "@/lib/languageConfig";
+import { getUITranslations } from "@/lib/uiTranslations";
+import { BaseStepProps } from "./types";
 
-interface ContactInfoStepProps {
+interface ContactInfoStepProps extends BaseStepProps {
   language: SupportedLanguage;
   isLoading: boolean;
   onSubmit: (data: { firstName: string; lastName: string }) => void;
@@ -29,8 +31,11 @@ export function ContactInfoStep({
   isListening = false,
   isCheckInSpeaking = false,
   isVoiceSupported = false,
+  onReset,
+  onAgentRequest,
 }: ContactInfoStepProps) {
   const t = TRANSLATIONS[language];
+  const ui = getUITranslations(language);
 
   // Get welcome text based on language
   const welcomeText = {
@@ -132,6 +137,42 @@ export function ContactInfoStep({
             {isLoading
               ? (language === "en" ? "Searching..." : language === "es" ? "Buscando..." : "搜索中...")
               : (language === "en" ? "Search Appointments" : language === "es" ? "Buscar Citas" : "搜索预约")}
+          </button>
+        </div>
+
+        {/* Divider */}
+        <hr className="border-t-2 border-gray-300 dark:border-gray-600" />
+
+        {/* Home Page and Call for Staff Buttons */}
+        <div className="flex flex-row gap-4">
+          <button
+            type="button"
+            onClick={onReset}
+            className="flex-1 flex items-center justify-center gap-3 px-8 py-6 text-2xl font-bold rounded-xl transition-all duration-200 shadow-md hover:shadow-lg"
+            style={{
+              color: "var(--primary-light)",
+              background: "var(--input-bg)",
+              border: "2px solid var(--primary-light)"
+            }}
+            aria-label={ui.homePageAriaLabel}
+          >
+            <span className="text-3xl" role="img" aria-label="House">🏠</span>
+            <span>{ui.homePage}</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={onAgentRequest}
+            className="flex-1 flex items-center justify-center gap-3 px-8 py-6 text-2xl font-bold rounded-xl transition-all duration-200 shadow-md hover:shadow-lg"
+            style={{
+              color: "var(--primary-light)",
+              background: "var(--input-bg)",
+              border: "2px solid var(--primary-light)"
+            }}
+            aria-label={ui.callForStaffAriaLabel}
+          >
+            <span className="text-3xl" role="img" aria-label="Phone">📞</span>
+            <span>{ui.callForStaff}</span>
           </button>
         </div>
       </form>
